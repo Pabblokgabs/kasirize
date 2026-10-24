@@ -1,13 +1,13 @@
 {
-  "name": "kasirize - Open door to what you can!",
-  "short_name": "kasirize",
-  "description": "Kasirize turns informal experience into credible skills, verified evidence, income opportunities, and transport-aware career paths for young South Africans.",
+  "name": "Kasirize",
+  "short_name": "Kasirize",
+  "description": "Shortening the distance between young people and meaningful income by translating skills into credible profiles, practical experience, work opportunities and career mobility.",
   "start_url": "/",
   "id": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#faf4f4",
+  "background_color": "#fafaf8",
+  "theme_color": "#064e3b",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
