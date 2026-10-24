@@ -1,21 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-import { ServiceWorkerRegister } from "./sw-register";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { ServiceWorkerRegister } from "./sw-register";
 
 export const viewport: Viewport = {
-  themeColor: "#faf4f4",
+  themeColor: "#064e3b",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -23,14 +12,14 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "kasirize - Open door to what you can!",
+  title: "Kasirize — Shortening the distance to meaningful income",
   description:
-    "Kasirize turns informal experience into credible skills, verified evidence, income opportunities, and transport-aware career paths for young South Africans.",
-  applicationName: "kasirize",
+    "Shortening the distance between young people and meaningful income by translating skills into credible profiles, practical experience, work opportunities and career mobility.",
+  applicationName: "Kasirize",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "kasirize",
+    title: "Kasirize",
   },
   formatDetection: {
     telephone: false,
@@ -39,11 +28,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className="h-full antialiased">
       <head>
+        {/* Self-hosted via Google Fonts CDN — browser fetches at runtime, not build time */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -55,12 +42,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
+        <Toaster position="top-center" reverseOrder={false} />
         <ServiceWorkerRegister />
       </body>
-      <Toaster position="top-center" reverseOrder={false} />
     </html>
   );
 }
-
