@@ -181,7 +181,7 @@ const INITIAL_CHATS: ChatContact[] = [
 
 export default function YouthChatDashboard() {
   const [chats, setChats] = useState<ChatContact[]>(INITIAL_CHATS);
-  const [activeChatId, setActiveChatId] = useState<string | null>("chat-1");
+  const [activeChatId, setActiveChatId] = useState<string | null>();
   const [searchQuery, setSearchQuery] = useState("");
   const [messageInput, setMessageInput] = useState("");
 
@@ -451,7 +451,7 @@ export default function YouthChatDashboard() {
           </div>
 
           {/* Safety Reminder Footer */}
-          <div className="p-3 bg-muted/40 border-t border-border flex items-center gap-2 text-[11px] text-muted-foreground">
+          <div className="p-3 pb-7 bg-muted/40 border-t border-border flex items-center gap-2 text-[11px] text-muted-foreground">
             <Shield className="size-3.5 text-primary shrink-0" />
             <span className="line-clamp-1">
               Automated AI monitors conversations for youth safety.
@@ -662,7 +662,7 @@ export default function YouthChatDashboard() {
 
               {/* ─── MESSAGE INPUT BAR: DISABLED IF VIOLATION DETECTED OR BLOCKED ─── */}
               {isChatDisabled ? (
-                <div className="p-3 border-t border-border bg-muted/60 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                <div className="p-3 pb-7 border-t border-border bg-muted/60 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Ban className="size-4 text-destructive shrink-0" />
                     <span>
@@ -685,7 +685,7 @@ export default function YouthChatDashboard() {
               ) : (
                 <form
                   onSubmit={handleSendMessage}
-                  className="p-3 border-t border-border bg-card flex items-center gap-2 shrink-0"
+                  className="p-3 pb-7 border-t border-border bg-card flex items-center gap-2 shrink-0"
                 >
                   <Input
                     placeholder={`Reply to ${activeChat.name}... (e.g. Try typing 'send bank details')`}

@@ -1,5 +1,6 @@
 "use client";
 
+import SkeletonTemplate from "@/components/skeleton-template/page";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useApplications, useOpportunities } from "@/hooks/queries";
@@ -34,40 +35,47 @@ export default function YouthOpportunitiesDashboard() {
   const isLoading = oppLoading || appLoading;
 
   const opportunities: Opportunity[] = useMemo(() => {
-    if (!oppData?.opportunities || !Array.isArray(oppData.opportunities)) return [];
+    if (!oppData?.opportunities || !Array.isArray(oppData.opportunities))
+      return [];
 
-    return oppData.opportunities.map((o: {
-      id: string;
-      title: string;
-      companyName: string;
-      location: string;
-      stipendCents?: number;
-      type?: string;
-      description?: string;
-      requirements?: string[] | string;
-    }) => ({
-      id: o.id,
-      title: o.title,
-      employerName: o.companyName,
-      organisationType: "retailer",
-      location: o.location,
-      type: (o.type as Opportunity["type"]) || "learnership",
-      description: o.description || "",
-      requiredSkills: Array.isArray(o.requirements)
-        ? o.requirements
-        : typeof o.requirements === "string"
-        ? JSON.parse(o.requirements || "[]")
-        : ["Punctuality", "Teamwork"],
-      applicationDeadline: new Date(Date.now() + 86400000 * 14).toISOString(),
-      monthlyStipendCents: o.stipendCents || 450000,
-      transportCreditFunded: true,
-    }));
+    return oppData.opportunities.map(
+      (o: {
+        id: string;
+        title: string;
+        companyName: string;
+        location: string;
+        stipendCents?: number;
+        type?: string;
+        description?: string;
+        requirements?: string[] | string;
+      }) => ({
+        id: o.id,
+        title: o.title,
+        employerName: o.companyName,
+        organisationType: "retailer",
+        location: o.location,
+        type: (o.type as Opportunity["type"]) || "learnership",
+        description: o.description || "",
+        requiredSkills: Array.isArray(o.requirements)
+          ? o.requirements
+          : typeof o.requirements === "string"
+            ? JSON.parse(o.requirements || "[]")
+            : ["Punctuality", "Teamwork"],
+        applicationDeadline: new Date(Date.now() + 86400000 * 14).toISOString(),
+        monthlyStipendCents: o.stipendCents || 450000,
+        transportCreditFunded: true,
+      }),
+    );
   }, [oppData]);
 
   const appliedIds = useMemo(() => {
-    if (!appData?.applications || !Array.isArray(appData.applications)) return [];
+    if (!appData?.applications || !Array.isArray(appData.applications))
+      return [];
     return appData.applications
-      .filter((a: { applicantId?: string }) => a.applicantId === profile?.id || a.applicantId === "usr_youth_01")
+      .filter(
+        (a: { applicantId?: string }) =>
+          a.applicantId === profile?.id || a.applicantId === "usr_youth_01",
+      )
       .map((a: { opportunityId: string }) => a.opportunityId);
   }, [appData, profile?.id]);
 
@@ -254,8 +262,38 @@ export default function YouthOpportunitiesDashboard() {
 
         {/* ─── LIST ─── */}
         {isLoading ? (
-          <div className="p-12 text-center text-xs text-muted-foreground">
-            Loading opportunities from Neon database...
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-3 w-2/3" />
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-16 w-full" />
+              <SkeletonTemplate className="h-10 w-full" />
+            </div>
+
+            <div className="space-y-2">
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-3 w-2/3" />
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-16 w-full" />
+              <SkeletonTemplate className="h-10 w-full" />
+            </div>
+
+            <div className="space-y-2">
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-3 w-2/3" />
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-16 w-full" />
+              <SkeletonTemplate className="h-10 w-full" />
+            </div>
+
+            <div className="space-y-2">
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-3 w-2/3" />
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-16 w-full" />
+              <SkeletonTemplate className="h-10 w-full" />
+            </div>
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center rounded-card bg-card border border-border space-y-3">

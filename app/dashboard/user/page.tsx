@@ -1,5 +1,6 @@
 "use client";
 
+import SkeletonTemplate from "@/components/skeleton-template/page";
 import { buttonVariants } from "@/components/ui/button";
 import { useLiveUserData } from "@/hooks/queries";
 import { taskToSlug } from "@/lib/slugs";
@@ -26,26 +27,38 @@ import { toast } from "react-hot-toast";
 export default function YouthDashboardPage() {
   const currentData = getCurrentUserData();
   const authUser = useKasirizeStore((state) => state.authUser);
-  const activeEmail = authUser?.email || currentData.user?.email || "kagiso@kasirize.org.za";
+  const activeEmail =
+    authUser?.email || currentData.user?.email || "kagiso@kasirize.org.za";
 
   const { data: liveData, isLoading } = useLiveUserData(activeEmail);
-  const [expandedBreakdownTaskId, setExpandedBreakdownTaskId] = useState<string | null>(null);
+  const [expandedBreakdownTaskId, setExpandedBreakdownTaskId] = useState<
+    string | null
+  >(null);
 
   // Derive profile cleanly from query result or fallback
   const profile: YouthProfile = useMemo(() => {
     if (liveData?.profile) {
       return {
         id: liveData.profile.userId || liveData.user?.id || "usr_youth_01",
-        fullName: liveData.user?.name || currentData.user?.name || "Kagiso Sithole",
+        fullName:
+          liveData.user?.name || currentData.user?.name || "Kagiso Sithole",
         email: liveData.user?.email || activeEmail,
-        location: liveData.profile.location || currentData.youthProfile?.location || "Soweto",
-        province: liveData.profile.province || currentData.youthProfile?.province || "Gauteng",
+        location:
+          liveData.profile.location ||
+          currentData.youthProfile?.location ||
+          "Soweto",
+        province:
+          liveData.profile.province ||
+          currentData.youthProfile?.province ||
+          "Gauteng",
         experienceStory:
           liveData.profile.experienceStory ||
           currentData.youthProfile?.experienceStory ||
           "Logistics and retail assistant.",
         overallConfidenceScore:
-          liveData.profile.confidenceScore || liveData.user?.confidenceScore || 91,
+          liveData.profile.confidenceScore ||
+          liveData.user?.confidenceScore ||
+          91,
         mockWalletCents: liveData.profile.walletBalanceCents ?? 45000,
         completedTasksCount: liveData.profile.completedTasksCount ?? 14,
         savedOpportunities: ["opp_01"],
@@ -62,7 +75,9 @@ export default function YouthDashboardPage() {
             id: s.id,
             skillId: s.skillId,
             skillName: s.skillName,
-            status: s.verified ? ("task_verified" as const) : ("self_declared" as const),
+            status: s.verified
+              ? ("task_verified" as const)
+              : ("self_declared" as const),
             confidence: s.confidenceScore || 85,
             userApproved: true,
           }),
@@ -127,8 +142,8 @@ export default function YouthDashboardPage() {
         skillsRequired: Array.isArray(t.skillsRequired)
           ? t.skillsRequired
           : typeof t.skillsRequired === "string"
-          ? JSON.parse(t.skillsRequired || "[]")
-          : ["Customer Service", "Punctuality"],
+            ? JSON.parse(t.skillsRequired || "[]")
+            : ["Customer Service", "Punctuality"],
         safetyNotes: t.safetyNotes || "Verified local task.",
         workersNeeded: t.workersNeeded || 1,
       }),
@@ -139,35 +154,40 @@ export default function YouthDashboardPage() {
 
   // Derive opportunities cleanly
   const opportunities: Opportunity[] = useMemo(() => {
-    if (!liveData?.opportunities || !Array.isArray(liveData.opportunities)) return [];
+    if (!liveData?.opportunities || !Array.isArray(liveData.opportunities))
+      return [];
 
-    return liveData.opportunities.slice(0, 5).map(
-      (o: {
-        id: string;
-        title: string;
-        companyName: string;
-        location: string;
-        stipendCents?: number;
-        type?: string;
-        description?: string;
-        requirements?: string[];
-      }) => ({
-        id: o.id,
-        title: o.title,
-        employerName: o.companyName,
-        employerId: "emp_1",
-        location: o.location,
-        organisationType: "retailer",
-        type: (o.type as Opportunity["type"]) || "learnership",
-        description: o.description || "",
-        requiredSkills: Array.isArray(o.requirements)
-          ? o.requirements
-          : ["Hardworking", "Punctual"],
-        applicationDeadline: new Date(Date.now() + 86400000 * 14).toISOString(),
-        monthlyStipendCents: o.stipendCents || 450000,
-        transportCreditFunded: true,
-      }),
-    );
+    return liveData.opportunities
+      .slice(0, 5)
+      .map(
+        (o: {
+          id: string;
+          title: string;
+          companyName: string;
+          location: string;
+          stipendCents?: number;
+          type?: string;
+          description?: string;
+          requirements?: string[];
+        }) => ({
+          id: o.id,
+          title: o.title,
+          employerName: o.companyName,
+          employerId: "emp_1",
+          location: o.location,
+          organisationType: "retailer",
+          type: (o.type as Opportunity["type"]) || "learnership",
+          description: o.description || "",
+          requiredSkills: Array.isArray(o.requirements)
+            ? o.requirements
+            : ["Hardworking", "Punctual"],
+          applicationDeadline: new Date(
+            Date.now() + 86400000 * 14,
+          ).toISOString(),
+          monthlyStipendCents: o.stipendCents || 450000,
+          transportCreditFunded: true,
+        }),
+      );
   }, [liveData]);
 
   // Applied task ids
@@ -177,13 +197,16 @@ export default function YouthDashboardPage() {
 
   // Skill matching helper
   const getSkillMatchBreakdown = (taskSkills: string[]) => {
-    const userSkillNames = (profile?.skills || []).map((s) => s.skillName.toLowerCase());
+    const userSkillNames = (profile?.skills || []).map((s) =>
+      s.skillName.toLowerCase(),
+    );
     const verifiedOrExisting: string[] = [];
     const newToEarn: string[] = [];
 
     taskSkills.forEach((skill) => {
       const match = userSkillNames.some(
-        (us) => us.includes(skill.toLowerCase()) || skill.toLowerCase().includes(us),
+        (us) =>
+          us.includes(skill.toLowerCase()) || skill.toLowerCase().includes(us),
       );
       if (match) {
         verifiedOrExisting.push(skill);
@@ -249,7 +272,8 @@ export default function YouthDashboardPage() {
                 Confidence Score: {confidence}%
               </h2>
               <p className="text-xs text-white/80 leading-relaxed mb-4">
-                Shortening the distance to jobs. Each verified task and referee confirmation improves your employer match ranking.
+                Shortening the distance to jobs. Each verified task and referee
+                confirmation improves your employer match ranking.
               </p>
 
               <div className="flex flex-wrap items-center gap-2.5 text-xs">
@@ -266,10 +290,13 @@ export default function YouthDashboardPage() {
             <div className="bg-white/10 backdrop-blur p-4 rounded-xl border border-white/15 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-white/80">Available Earnings</span>
-                <span className="font-bold text-white text-sm">R {walletRands}</span>
+                <span className="font-bold text-white text-sm">
+                  R {walletRands}
+                </span>
               </div>
               <div className="text-[11px] text-white/70">
-                Earned via confirmed local tasks. Safe escrow credited immediately upon requester sign-off.
+                Earned via confirmed local tasks. Safe escrow credited
+                immediately upon requester sign-off.
               </div>
               <button
                 type="button"
@@ -290,9 +317,13 @@ export default function YouthDashboardPage() {
         <div className="p-3.5 rounded-card bg-primary/5 border border-primary/20 flex items-start gap-3">
           <Shield className="size-4.5 text-primary shrink-0 mt-0.5" />
           <div className="text-xs leading-relaxed">
-            <span className="font-bold text-foreground">Safety comes first. </span>
+            <span className="font-bold text-foreground">
+              Safety comes first.{" "}
+            </span>
             <span className="text-muted-foreground">
-              Every task shows who the requester is and their verification status. You never pay to take on a task, and your payout is secured in local escrow before you start.
+              Every task shows who the requester is and their verification
+              status. You never pay to take on a task, and your payout is
+              secured in local escrow before you start.
             </span>
           </div>
         </div>
@@ -321,7 +352,8 @@ export default function YouthDashboardPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                      {skill.status === "task_verified" || skill.status === "referee_confirmed"
+                      {skill.status === "task_verified" ||
+                      skill.status === "referee_confirmed"
                         ? "Verified"
                         : "Self-Declared"}
                     </span>
@@ -336,14 +368,15 @@ export default function YouthDashboardPage() {
                     {skill.endorsedBy
                       ? `Verified by ${skill.endorsedBy}`
                       : skill.status === "referee_confirmed"
-                      ? "Confirmed by referee"
-                      : "Derived from profile"}
+                        ? "Confirmed by referee"
+                        : "Derived from profile"}
                   </div>
                 </div>
               ))
             ) : (
               <div className="p-4 rounded-card bg-card border border-border text-xs text-muted-foreground">
-                No skills added yet. Complete a task to earn your first verified skill!
+                No skills added yet. Complete a task to earn your first verified
+                skill!
               </div>
             )}
           </div>
@@ -351,7 +384,7 @@ export default function YouthDashboardPage() {
 
         {/* ─── NEARBY TASKS ─── */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="items-center justify-between hidden md:flex">
             <div>
               <h3 className="font-heading font-bold text-base text-foreground flex items-center gap-2">
                 <span>Verified Township Tasks</span>
@@ -360,7 +393,8 @@ export default function YouthDashboardPage() {
                 </span>
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Complete tasks to earn money and immediately verify or add demonstrated skills to your profile.
+                Complete tasks to earn money and immediately verify or add
+                demonstrated skills to your profile.
               </p>
             </div>
             <Link
@@ -371,9 +405,35 @@ export default function YouthDashboardPage() {
             </Link>
           </div>
 
+          <div className="flex md:hidden items-center justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  {allTasks.length} Available
+                </span>
+                <Link
+                  href="/dashboard/user/tasks"
+                  className="text-xs font-semibold text-primary hover:underline shrink-0"
+                >
+                  See all tasks →
+                </Link>
+              </div>
+              <span className="font-heading font-bold text-base text-foreground">
+                Verified Township Tasks
+              </span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Complete tasks to earn money and immediately verify or add
+                demonstrated skills to your profile.
+              </p>
+            </div>
+          </div>
+
           {isLoading ? (
-            <div className="p-8 text-center text-xs text-muted-foreground">
-              Loading live tasks from Neon database...
+            <div className="space-y-2">
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-3 w-2/3" />
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-28 w-full" />
             </div>
           ) : (
             <div className="space-y-3.5">
@@ -411,7 +471,9 @@ export default function YouthDashboardPage() {
                       </h4>
 
                       <div className="flex flex-col md:flex-row md:items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                        <span className="font-medium text-foreground">{task.requesterName}</span>
+                        <span className="font-medium text-foreground">
+                          {task.requesterName}
+                        </span>
                         <span className="hidden md:block">•</span>
                         <span className="flex items-center gap-1">
                           <MapPin className="size-3 text-primary" />
@@ -428,21 +490,33 @@ export default function YouthDashboardPage() {
                     {/* Skills Impact */}
                     <div className="bg-muted/50 rounded-lg p-3 text-xs space-y-2 border border-border/60">
                       <div className="text-muted-foreground text-[11px]">
-                        {verifiedOrExisting.length > 0 && newToEarn.length === 0 ? (
-                          <span>You have every listed skill. Finish this task to get them officially verified!</span>
+                        {verifiedOrExisting.length > 0 &&
+                        newToEarn.length === 0 ? (
+                          <span>
+                            You have every listed skill. Finish this task to get
+                            them officially verified!
+                          </span>
                         ) : verifiedOrExisting.length > 0 ? (
                           <span>
-                            You have {verifiedOrExisting.length} of {task.skillsRequired.length} listed skills. This task also builds {newToEarn.length} new skill{newToEarn.length > 1 ? "s" : ""} on your profile.
+                            You have {verifiedOrExisting.length} of{" "}
+                            {task.skillsRequired.length} listed skills. This
+                            task also builds {newToEarn.length} new skill
+                            {newToEarn.length > 1 ? "s" : ""} on your profile.
                           </span>
                         ) : (
-                          <span>You do not have these skills on your profile yet. Great way to add them — you are free to apply!</span>
+                          <span>
+                            You do not have these skills on your profile yet.
+                            Great way to add them — you are free to apply!
+                          </span>
                         )}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                         {verifiedOrExisting.length > 0 && (
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] font-semibold text-foreground">You have:</span>
+                            <span className="text-[11px] font-semibold text-foreground">
+                              You have:
+                            </span>
                             {verifiedOrExisting.map((skill, idx) => (
                               <span
                                 key={`have-${idx}`}
@@ -450,7 +524,9 @@ export default function YouthDashboardPage() {
                               >
                                 <Check className="size-3" />
                                 <span>{skill}</span>
-                                <span className="text-[9px] text-primary/70 font-bold uppercase">(Verify)</span>
+                                <span className="text-[9px] text-primary/70 font-bold uppercase">
+                                  (Verify)
+                                </span>
                               </span>
                             ))}
                           </div>
@@ -458,7 +534,9 @@ export default function YouthDashboardPage() {
 
                         {newToEarn.length > 0 && (
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] font-semibold text-foreground">Builds:</span>
+                            <span className="text-[11px] font-semibold text-foreground">
+                              Builds:
+                            </span>
                             {newToEarn.map((skill, idx) => (
                               <span
                                 key={`build-${idx}`}
@@ -466,7 +544,9 @@ export default function YouthDashboardPage() {
                               >
                                 <Plus className="size-3" />
                                 <span>{skill}</span>
-                                <span className="text-[9px] text-accent/80 font-bold uppercase">(Add)</span>
+                                <span className="text-[9px] text-accent/80 font-bold uppercase">
+                                  (Add)
+                                </span>
                               </span>
                             ))}
                           </div>
@@ -477,7 +557,9 @@ export default function YouthDashboardPage() {
                     {/* Breakdown */}
                     {isBreakdownOpen && (
                       <div className="rounded-xl bg-muted/40 border border-border/80 p-4 space-y-4 text-xs animate-in fade-in-50 duration-200">
-                        <p className="text-muted-foreground leading-relaxed">{task.description}</p>
+                        <p className="text-muted-foreground leading-relaxed">
+                          {task.description}
+                        </p>
                         <div className="space-y-1.5">
                           <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
                             What is asked of you
@@ -485,11 +567,17 @@ export default function YouthDashboardPage() {
                           <ul className="space-y-1 text-muted-foreground">
                             <li className="flex items-center gap-2">
                               <span className="w-1.5 h-1.5 rounded-full border border-foreground/40 shrink-0" />
-                              <span>Able to perform the required duties for the {task.durationHours}-hour session</span>
+                              <span>
+                                Able to perform the required duties for the{" "}
+                                {task.durationHours}-hour session
+                              </span>
                             </li>
                             <li className="flex items-center gap-2">
                               <span className="w-1.5 h-1.5 rounded-full border border-foreground/40 shrink-0" />
-                              <span>Follow requester guidelines and check in on arrival</span>
+                              <span>
+                                Follow requester guidelines and check in on
+                                arrival
+                              </span>
                             </li>
                             <li className="flex items-center gap-2">
                               <span className="w-1.5 h-1.5 rounded-full border border-foreground/40 shrink-0" />
@@ -504,11 +592,23 @@ export default function YouthDashboardPage() {
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-border flex-wrap">
                       <button
                         type="button"
-                        onClick={() => setExpandedBreakdownTaskId(isBreakdownOpen ? null : task.id)}
+                        onClick={() =>
+                          setExpandedBreakdownTaskId(
+                            isBreakdownOpen ? null : task.id,
+                          )
+                        }
                         className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        <span>{isBreakdownOpen ? "Hide match details" : "Why this matches"}</span>
-                        {isBreakdownOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                        <span>
+                          {isBreakdownOpen
+                            ? "Hide match details"
+                            : "Why this matches"}
+                        </span>
+                        {isBreakdownOpen ? (
+                          <ChevronUp className="size-3.5" />
+                        ) : (
+                          <ChevronDown className="size-3.5" />
+                        )}
                       </button>
 
                       <div className="flex items-center gap-2 ml-auto">
@@ -518,7 +618,9 @@ export default function YouthDashboardPage() {
                         >
                           <Eye className="size-3.5" />
                           <span>
-                            {appliedTaskIds.includes(task.id) ? "View / Applied ✓" : "View Details & Apply"}
+                            {appliedTaskIds.includes(task.id)
+                              ? "View / Applied ✓"
+                              : "View Details & Apply"}
                           </span>
                         </Link>
                       </div>
@@ -534,9 +636,12 @@ export default function YouthDashboardPage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-heading font-bold text-base text-foreground">Matched Opportunities</h3>
+              <h3 className="font-heading font-bold text-base text-foreground">
+                Matched Opportunities
+              </h3>
               <p className="text-xs text-muted-foreground">
-                Longer-term learnerships and jobs matching your verified competencies.
+                Longer-term learnerships and jobs matching your verified
+                competencies.
               </p>
             </div>
             <Link
@@ -564,9 +669,13 @@ export default function YouthDashboardPage() {
                         : "Market competitive"}
                     </span>
                   </div>
-                  <h4 className="font-heading font-bold text-sm text-foreground">{opp.title}</h4>
+                  <h4 className="font-heading font-bold text-sm text-foreground">
+                    {opp.title}
+                  </h4>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">{opp.employerName}</span>
+                    <span className="font-medium text-foreground">
+                      {opp.employerName}
+                    </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <MapPin className="size-3 text-primary" />

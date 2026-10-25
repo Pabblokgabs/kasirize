@@ -17,9 +17,7 @@ import { useLiveUserData } from "@/hooks/queries";
 import { getStoredAuthUser } from "@/lib/auth";
 import { useKasirizeStore } from "@/store/kasirize-store";
 import {
-  ArrowLeft,
   Award,
-  Building2,
   Check,
   CreditCard,
   Crown,
@@ -92,7 +90,8 @@ export default function EmployerProfilePage() {
         companyName: empProf?.companyName || u?.name || prev.companyName,
         contactEmail: u?.email || prev.contactEmail,
         location: u?.location || prev.location,
-        registrationNumber: empProf?.registrationNumber || prev.registrationNumber,
+        registrationNumber:
+          empProf?.registrationNumber || prev.registrationNumber,
         bbbeeLevel: empProf?.bbbeeLevel || prev.bbbeeLevel,
         industry: empProf?.industrySector || prev.industry,
         website: empProf?.website || prev.website,
@@ -202,23 +201,6 @@ export default function EmployerProfilePage() {
           </Button>
         </div>
       )}
-
-      {/* ─── Back to Dashboard ─── */}
-      <div className="mb-5 flex items-center justify-between">
-        <Link
-          href="/dashboard/employer"
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <ArrowLeft className="size-4 mr-1.5" /> Back to Dashboard
-        </Link>
-        <Link
-          href="/dashboard/employer/place"
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          <Building2 className="size-4 mr-1.5" /> Workplaces (
-          {workplaces.length || 1})
-        </Link>
-      </div>
 
       {/* ─── Profile Header with Badge ─── */}
       <div className="bg-card rounded-card border border-border shadow-card p-6 mb-6">

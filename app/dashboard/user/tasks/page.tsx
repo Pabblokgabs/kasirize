@@ -1,7 +1,9 @@
 "use client";
 
+import SkeletonTemplate from "@/components/skeleton-template/page";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useTasks } from "@/hooks/queries";
 import { taskToSlug } from "@/lib/slugs";
 import { getStoredProfile } from "@/lib/store";
@@ -38,48 +40,54 @@ export default function YouthTasksDashboard() {
   const allTasks: Task[] = useMemo(() => {
     if (!tasksData?.tasks || !Array.isArray(tasksData.tasks)) return [];
 
-    return tasksData.tasks.map((t: {
-      id: string;
-      title: string;
-      description: string;
-      location: string;
-      payoutCents: number;
-      estimatedTaxiFareCents?: number;
-      durationHours?: number;
-      deadline?: string;
-      status?: string;
-      requesterName?: string;
-      skillsRequired?: string[] | string;
-      safetyNotes?: string;
-      workersNeeded?: number;
-      assignedYouthId?: string;
-    }) => ({
-      id: t.id,
-      title: t.title,
-      description: t.description,
-      location: t.location,
-      payoutCents: t.payoutCents || 15000,
-      estimatedTaxiFareCents: t.estimatedTaxiFareCents || 0,
-      durationHours: t.durationHours || 3,
-      deadline: t.deadline || new Date().toISOString(),
-      status: (t.status as Task["status"]) || "open",
-      requesterName: t.requesterName || "Local Township Enterprise",
-      requesterType: "spaza_shop",
-      skillsRequired: Array.isArray(t.skillsRequired)
-        ? t.skillsRequired
-        : typeof t.skillsRequired === "string"
-        ? JSON.parse(t.skillsRequired || "[]")
-        : ["Punctuality", "Customer Service"],
-      safetyNotes: t.safetyNotes || "Verified hyper-local task.",
-      workersNeeded: t.workersNeeded || 1,
-    }));
+    return tasksData.tasks.map(
+      (t: {
+        id: string;
+        title: string;
+        description: string;
+        location: string;
+        payoutCents: number;
+        estimatedTaxiFareCents?: number;
+        durationHours?: number;
+        deadline?: string;
+        status?: string;
+        requesterName?: string;
+        skillsRequired?: string[] | string;
+        safetyNotes?: string;
+        workersNeeded?: number;
+        assignedYouthId?: string;
+      }) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        location: t.location,
+        payoutCents: t.payoutCents || 15000,
+        estimatedTaxiFareCents: t.estimatedTaxiFareCents || 0,
+        durationHours: t.durationHours || 3,
+        deadline: t.deadline || new Date().toISOString(),
+        status: (t.status as Task["status"]) || "open",
+        requesterName: t.requesterName || "Local Township Enterprise",
+        requesterType: "spaza_shop",
+        skillsRequired: Array.isArray(t.skillsRequired)
+          ? t.skillsRequired
+          : typeof t.skillsRequired === "string"
+            ? JSON.parse(t.skillsRequired || "[]")
+            : ["Punctuality", "Customer Service"],
+        safetyNotes: t.safetyNotes || "Verified hyper-local task.",
+        workersNeeded: t.workersNeeded || 1,
+      }),
+    );
   }, [tasksData]);
 
   // Applied tasks
   const appliedIds = useMemo(() => {
     if (!tasksData?.tasks || !Array.isArray(tasksData.tasks)) return [];
     return tasksData.tasks
-      .filter((t: { assignedYouthId?: string }) => t.assignedYouthId === profile?.id || t.assignedYouthId === "usr_youth_01")
+      .filter(
+        (t: { assignedYouthId?: string }) =>
+          t.assignedYouthId === profile?.id ||
+          t.assignedYouthId === "usr_youth_01",
+      )
       .map((t: { id: string }) => t.id);
   }, [tasksData, profile?.id]);
 
@@ -224,111 +232,144 @@ export default function YouthTasksDashboard() {
           </div>
 
           {/* Quick Filter Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-            <button
-              onClick={() => setSelectedTab("all")}
-              className={`px-3 py-1.5 rounded-full font-medium transition-colors shrink-0 ${
-                selectedTab === "all"
-                  ? "bg-brand-deep text-white"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              All Tasks ({allTasks.length})
-            </button>
-            <button
-              onClick={() => setSelectedTab("high_match")}
-              className={`px-3 py-1.5 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1 ${
-                selectedTab === "high_match"
-                  ? "bg-brand-deep text-white"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Sparkles className="size-3 text-amber-500" />
-              <span>High Match (75%+)</span>
-            </button>
-            <button
-              onClick={() => setSelectedTab("local_only")}
-              className={`px-3 py-1.5 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1 ${
-                selectedTab === "local_only"
-                  ? "bg-brand-deep text-white"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Footprints className="size-3 text-primary" />
-              <span>In My Ward / Township</span>
-            </button>
-            <button
-              onClick={() => setSelectedTab("applied")}
-              className={`px-3 py-1.5 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1 ${
-                selectedTab === "applied"
-                  ? "bg-brand-deep text-white"
-                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Check className="size-3 text-emerald-500" />
-              <span>Applied ({appliedIds.length})</span>
-            </button>
-          </div>
+          <ScrollArea>
+            <div className="flex items-center gap-1.5 pb-1 scrollbar-none text-xs">
+              <button
+                onClick={() => setSelectedTab("all")}
+                className={`px-3 py-1.5 rounded-full font-medium transition-colors shrink-0 ${
+                  selectedTab === "all"
+                    ? "bg-brand-deep text-white"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                All Tasks ({allTasks.length})
+              </button>
+              <button
+                onClick={() => setSelectedTab("high_match")}
+                className={`px-3 py-1.5 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1 ${
+                  selectedTab === "high_match"
+                    ? "bg-brand-deep text-white"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Sparkles className="size-3 text-amber-500" />
+                <span>High Match (75%+)</span>
+              </button>
+              <button
+                onClick={() => setSelectedTab("local_only")}
+                className={`px-3 py-1.5 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1 ${
+                  selectedTab === "local_only"
+                    ? "bg-brand-deep text-white"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Footprints className="size-3 text-primary" />
+                <span>In My Ward / Township</span>
+              </button>
+              <button
+                onClick={() => setSelectedTab("applied")}
+                className={`px-3 py-1.5 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1 ${
+                  selectedTab === "applied"
+                    ? "bg-brand-deep text-white"
+                    : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Check className="size-3 text-emerald-500" />
+                <span>Applied ({appliedIds.length})</span>
+              </button>
+            </div>
+
+            <ScrollBar hidden />
+          </ScrollArea>
 
           {/* Filter Dropdowns / Secondary Row */}
-          <div className="flex flex-row items-center gap-2 text-xs">
-            <div className="flex items-center gap-1.5 bg-card border border-border px-2.5 py-1.5 rounded-md">
-              <MapPin className="size-3 text-muted-foreground" />
-              <span className="text-muted-foreground font-medium">Area:</span>
-              <select
-                value={selectedLocation}
-                onChange={(e) => setSelectedLocation(e.target.value)}
-                className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer text-xs"
-              >
-                <option value="all">Everywhere</option>
-                {availableLocations
-                  .filter((loc) => loc !== "all")
-                  .map((loc) => (
-                    <option key={loc} value={loc}>
-                      {loc}
-                    </option>
-                  ))}
-              </select>
-            </div>
+          <ScrollArea>
+            <div className="flex flex-row items-center gap-2 text-xs">
+              <div className="flex items-center gap-1.5 bg-card border border-border px-2.5 py-1.5 rounded-md">
+                <MapPin className="size-3 text-muted-foreground" />
+                <span className="text-muted-foreground font-medium">Area:</span>
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer text-xs"
+                >
+                  <option value="all">Everywhere</option>
+                  {availableLocations
+                    .filter((loc) => loc !== "all")
+                    .map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
+                      </option>
+                    ))}
+                </select>
+              </div>
 
-            <div className="flex items-center gap-1.5 bg-card border border-border px-2.5 py-1.5 rounded-md">
-              <Clock className="size-3 text-muted-foreground" />
-              <span className="text-muted-foreground font-medium">
-                Duration:
-              </span>
-              <select
-                value={selectedDuration}
-                onChange={(e) => setSelectedDuration(e.target.value)}
-                className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer text-xs"
-              >
-                <option value="all">Any duration</option>
-                <option value="short">Short (&le; 3 hrs)</option>
-                <option value="half_day">Half Day (4-6 hrs)</option>
-                <option value="full_day">Full Day (7+ hrs)</option>
-              </select>
-            </div>
+              <div className="flex items-center gap-1.5 bg-card border border-border px-2.5 py-1.5 rounded-md">
+                <Clock className="size-3 text-muted-foreground" />
+                <span className="text-muted-foreground font-medium">
+                  Duration:
+                </span>
+                <select
+                  value={selectedDuration}
+                  onChange={(e) => setSelectedDuration(e.target.value)}
+                  className="bg-transparent text-foreground font-semibold focus:outline-none cursor-pointer text-xs"
+                >
+                  <option value="all">Any duration</option>
+                  <option value="short">Short (&le; 3 hrs)</option>
+                  <option value="half_day">Half Day (4-6 hrs)</option>
+                  <option value="full_day">Full Day (7+ hrs)</option>
+                </select>
+              </div>
 
-            {(selectedLocation !== "all" ||
-              selectedDuration !== "all" ||
-              search) && (
-              <button
-                onClick={() => {
-                  setSelectedLocation("all");
-                  setSelectedDuration("all");
-                  setSearch("");
-                }}
-                className="text-[11px] text-primary hover:underline font-semibold ml-auto"
-              >
-                Reset filters
-              </button>
-            )}
-          </div>
+              {(selectedLocation !== "all" ||
+                selectedDuration !== "all" ||
+                search) && (
+                <button
+                  onClick={() => {
+                    setSelectedLocation("all");
+                    setSelectedDuration("all");
+                    setSearch("");
+                  }}
+                  className="text-[11px] text-primary hover:underline font-semibold ml-auto"
+                >
+                  Reset filters
+                </button>
+              )}
+            </div>
+            <ScrollBar hidden />
+          </ScrollArea>
         </div>
 
         {/* ─── TASKS GRID ─── */}
         {isLoading ? (
-          <div className="p-12 text-center text-xs text-muted-foreground">
-            Loading tasks from Neon database...
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-3 w-2/3" />
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-16 w-full" />
+            </div>
+
+            <div className="space-y-2">
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-3 w-2/3" />
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-16 w-full" />
+            </div>
+
+            <div className="space-y-2">
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-3 w-2/3" />
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-16 w-full" />
+            </div>
+
+            <div className="space-y-2">
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-3 w-2/3" />
+              <SkeletonTemplate className="h-3 w-1/3" />
+              <SkeletonTemplate className="h-16 w-full" />
+            </div>
           </div>
         ) : filteredTasks.length === 0 ? (
           <div className="p-8 text-center rounded-card bg-card border border-border space-y-3">

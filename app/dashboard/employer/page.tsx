@@ -15,9 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getCurrentUserData } from "@/lib/user-data";
 import { Opportunity, YouthProfile } from "@/types";
 import {
-  ArrowRight,
   Briefcase,
-  Building2,
   Bus,
   ExternalLink,
   MapPin,
@@ -50,7 +48,9 @@ export default function EmployerDashboardPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [candidates, setCandidates] = useState<YouthProfile[]>([]);
   const [candidateFilter, setCandidateFilter] = useState("");
-  const [activeTab, setActiveTab] = useState<"all" | "shortlisted" | "interviewed">("all");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "shortlisted" | "interviewed"
+  >("all");
   const [isLoading, setIsLoading] = useState(true);
 
   // Interview funding state
@@ -94,79 +94,91 @@ export default function EmployerDashboardPage() {
     async function loadEmployerData() {
       try {
         const email = currentData.user.email || "lerato@massmart.co.za";
-        const res = await fetch(`/api/user/live-data?email=${encodeURIComponent(email)}`);
+        const res = await fetch(
+          `/api/user/live-data?email=${encodeURIComponent(email)}`,
+        );
         if (res.ok) {
           const json = await res.json();
           if (json.success && isMounted) {
             if (json.opportunities && Array.isArray(json.opportunities)) {
-              const adaptedOpps: Opportunity[] = json.opportunities.map((o: {
-                id: string;
-                title: string;
-                companyName: string;
-                location: string;
-                stipendCents?: number;
-                type?: string;
-                description?: string;
-                requirements?: string[] | string;
-              }) => ({
-                id: o.id,
-                title: o.title,
-                employerName: o.companyName || employerName,
-                employerId: "emp_1",
-                location: o.location,
-                type: (o.type as Opportunity["type"]) || "entry_level_job",
-                description: o.description || "",
-                requirements: Array.isArray(o.requirements)
-                  ? o.requirements
-                  : typeof o.requirements === "string"
-                  ? JSON.parse(o.requirements || "[]")
-                  : ["Inventory Auditing", "Punctuality"],
-                closingDate: new Date(Date.now() + 86400000 * 14).toISOString(),
-                monthlyStipendCents: o.stipendCents || 650000,
-                transportCovered: true,
-                minimumConfidenceScore: 75,
-              }));
+              const adaptedOpps: Opportunity[] = json.opportunities.map(
+                (o: {
+                  id: string;
+                  title: string;
+                  companyName: string;
+                  location: string;
+                  stipendCents?: number;
+                  type?: string;
+                  description?: string;
+                  requirements?: string[] | string;
+                }) => ({
+                  id: o.id,
+                  title: o.title,
+                  employerName: o.companyName || employerName,
+                  employerId: "emp_1",
+                  location: o.location,
+                  type: (o.type as Opportunity["type"]) || "entry_level_job",
+                  description: o.description || "",
+                  requirements: Array.isArray(o.requirements)
+                    ? o.requirements
+                    : typeof o.requirements === "string"
+                      ? JSON.parse(o.requirements || "[]")
+                      : ["Inventory Auditing", "Punctuality"],
+                  closingDate: new Date(
+                    Date.now() + 86400000 * 14,
+                  ).toISOString(),
+                  monthlyStipendCents: o.stipendCents || 650000,
+                  transportCovered: true,
+                  minimumConfidenceScore: 75,
+                }),
+              );
               setOpportunities(adaptedOpps);
             }
 
             if (json.candidates && Array.isArray(json.candidates)) {
-              const adaptedCandidates: YouthProfile[] = json.candidates.map((c: {
-                id: string;
-                applicantId: string;
-                applicantName?: string;
-                applicantEmail?: string;
-                applicantLocation?: string;
-                applicantConfidenceScore?: number;
-                status?: string;
-                transportVoucherApproved?: boolean;
-              }) => ({
-                id: c.applicantId,
-                fullName: c.applicantName || "Youth Candidate",
-                email: c.applicantEmail || "",
-                location: c.applicantLocation || "Johannesburg",
-                province: "Gauteng",
-                experienceStory: "Trained candidate with verified task completion record.",
-                overallConfidenceScore: c.applicantConfidenceScore || 88,
-                mockWalletCents: 45000,
-                completedTasksCount: 5,
-                savedOpportunities: [],
-                transportStipendEligible: true,
-                createdAt: new Date().toISOString(),
-                skills: [
-                  {
-                    id: "sk_1",
-                    skillId: "sk_1",
-                    skillName: "Stock Management",
-                    status: "task_verified",
-                    confidence: 90,
-                    userApproved: true,
-                  },
-                ],
-              }));
+              const adaptedCandidates: YouthProfile[] = json.candidates.map(
+                (c: {
+                  id: string;
+                  applicantId: string;
+                  applicantName?: string;
+                  applicantEmail?: string;
+                  applicantLocation?: string;
+                  applicantConfidenceScore?: number;
+                  status?: string;
+                  transportVoucherApproved?: boolean;
+                }) => ({
+                  id: c.applicantId,
+                  fullName: c.applicantName || "Youth Candidate",
+                  email: c.applicantEmail || "",
+                  location: c.applicantLocation || "Johannesburg",
+                  province: "Gauteng",
+                  experienceStory:
+                    "Trained candidate with verified task completion record.",
+                  overallConfidenceScore: c.applicantConfidenceScore || 88,
+                  mockWalletCents: 45000,
+                  completedTasksCount: 5,
+                  savedOpportunities: [],
+                  transportStipendEligible: true,
+                  createdAt: new Date().toISOString(),
+                  skills: [
+                    {
+                      id: "sk_1",
+                      skillId: "sk_1",
+                      skillName: "Stock Management",
+                      status: "task_verified",
+                      confidence: 90,
+                      userApproved: true,
+                    },
+                  ],
+                }),
+              );
               setCandidates(adaptedCandidates);
 
               const funded = json.candidates
-                .filter((c: { transportVoucherApproved?: boolean }) => c.transportVoucherApproved)
+                .filter(
+                  (c: { transportVoucherApproved?: boolean }) =>
+                    c.transportVoucherApproved,
+                )
                 .map((c: { applicantId: string }) => c.applicantId);
               setFundedInterviewIds(funded);
             }
@@ -178,41 +190,54 @@ export default function EmployerDashboardPage() {
           const youthRes = await fetch("/api/youth");
           if (youthRes.ok) {
             const youthJson = await youthRes.json();
-            if (youthJson.youth && Array.isArray(youthJson.youth) && youthJson.youth.length > 0) {
+            if (
+              youthJson.youth &&
+              Array.isArray(youthJson.youth) &&
+              youthJson.youth.length > 0
+            ) {
               setCandidates((prev) => {
                 if (prev.length > 0) return prev;
-                return youthJson.youth.map((y: { id: string; name: string; email: string; location: string; confidenceScore?: number }) => ({
-                  id: y.id,
-                  fullName: y.name,
-                  email: y.email,
-                  location: y.location || "Soweto",
-                  province: "Gauteng",
-                  experienceStory: "Motivated youth candidate from township talent pool.",
-                  overallConfidenceScore: y.confidenceScore || 85,
-                  mockWalletCents: 35000,
-                  completedTasksCount: 4,
-                  savedOpportunities: [],
-                  transportStipendEligible: true,
-                  createdAt: new Date().toISOString(),
-                  skills: [
-                    {
-                      id: "sk_1",
-                      skillId: "sk_1",
-                      skillName: "Customer Service",
-                      status: "task_verified",
-                      confidence: 90,
-                      userApproved: true,
-                    },
-                    {
-                      id: "sk_2",
-                      skillId: "sk_2",
-                      skillName: "Punctuality",
-                      status: "task_verified",
-                      confidence: 95,
-                      userApproved: true,
-                    },
-                  ],
-                }));
+                return youthJson.youth.map(
+                  (y: {
+                    id: string;
+                    name: string;
+                    email: string;
+                    location: string;
+                    confidenceScore?: number;
+                  }) => ({
+                    id: y.id,
+                    fullName: y.name,
+                    email: y.email,
+                    location: y.location || "Soweto",
+                    province: "Gauteng",
+                    experienceStory:
+                      "Motivated youth candidate from township talent pool.",
+                    overallConfidenceScore: y.confidenceScore || 85,
+                    mockWalletCents: 35000,
+                    completedTasksCount: 4,
+                    savedOpportunities: [],
+                    transportStipendEligible: true,
+                    createdAt: new Date().toISOString(),
+                    skills: [
+                      {
+                        id: "sk_1",
+                        skillId: "sk_1",
+                        skillName: "Customer Service",
+                        status: "task_verified",
+                        confidence: 90,
+                        userApproved: true,
+                      },
+                      {
+                        id: "sk_2",
+                        skillId: "sk_2",
+                        skillName: "Punctuality",
+                        status: "task_verified",
+                        confidence: 95,
+                        userApproved: true,
+                      },
+                    ],
+                  }),
+                );
               });
             }
           }
@@ -256,7 +281,8 @@ export default function EmployerDashboardPage() {
       if (appRes.ok) {
         const appJson = await appRes.json();
         const matchedApp = (appJson.applications || []).find(
-          (a: { applicantId: string }) => a.applicantId === selectedCandidateForInterview.id,
+          (a: { applicantId: string }) =>
+            a.applicantId === selectedCandidateForInterview.id,
         );
         if (matchedApp) {
           await fetch(`/api/applications/${matchedApp.id}`, {
@@ -277,7 +303,10 @@ export default function EmployerDashboardPage() {
       console.warn("Could not patch application interview in db:", err);
     }
 
-    const nextFunded = [...fundedInterviewIds, selectedCandidateForInterview.id];
+    const nextFunded = [
+      ...fundedInterviewIds,
+      selectedCandidateForInterview.id,
+    ];
     setFundedInterviewIds(nextFunded);
 
     toast.success(
@@ -305,8 +334,13 @@ export default function EmployerDashboardPage() {
           type: newOpp.type,
           location: newOpp.location,
           stipendCents: Number(newOpp.stipendRands || 6500) * 100,
-          requirements: newOpp.skills.split(",").map((s) => s.trim()).filter(Boolean),
-          description: newOpp.description || "SETA-accredited pathway with verified transport funding.",
+          requirements: newOpp.skills
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          description:
+            newOpp.description ||
+            "SETA-accredited pathway with verified transport funding.",
         }),
       });
 
@@ -321,7 +355,9 @@ export default function EmployerDashboardPage() {
     }
 
     setShowPostModal(false);
-    toast.success("Opportunity published! Matching verified youth talent in database.");
+    toast.success(
+      "Opportunity published! Matching verified youth talent in database.",
+    );
   };
 
   const filteredCandidates = candidates.filter((cand) => {
@@ -447,7 +483,8 @@ export default function EmployerDashboardPage() {
                 </span>
               </h3>
               <p className="text-xs text-muted-foreground">
-                Ranked by real township task completion &amp; referee endorsement.
+                Ranked by real township task completion &amp; referee
+                endorsement.
               </p>
             </div>
 
@@ -535,7 +572,9 @@ export default function EmployerDashboardPage() {
                           {isFunded && (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white flex items-center gap-1">
                               <Bus className="size-3" />
-                              <span>Interview &amp; Taxi Voucher Activated</span>
+                              <span>
+                                Interview &amp; Taxi Voucher Activated
+                              </span>
                             </span>
                           )}
                         </div>
@@ -610,7 +649,8 @@ export default function EmployerDashboardPage() {
                 <span>Your Active Opportunity Postings</span>
               </h3>
               <p className="text-xs text-muted-foreground">
-                Learnerships, micro-internships, and entry-level positions in the live database.
+                Learnerships, micro-internships, and entry-level positions in
+                the live database.
               </p>
             </div>
             <Link
@@ -687,21 +727,26 @@ export default function EmployerDashboardPage() {
               <span>Fund Taxi Fare &amp; Invite Candidate</span>
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Directly removes the #1 barrier to youth employment in South Africa.
-              The voucher is funded from your corporate mobility escrow.
+              Directly removes the #1 barrier to youth employment in South
+              Africa. The voucher is funded from your corporate mobility escrow.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleConfirmInterviewAndVoucher} className="space-y-3.5 py-1">
+          <form
+            onSubmit={handleConfirmInterviewAndVoucher}
+            className="space-y-3.5 py-1"
+          >
             <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-foreground space-y-1">
               <div className="font-bold flex items-center justify-between">
                 <span>Candidate: {interviewForm.candidateName}</span>
                 <span className="text-emerald-700 dark:text-emerald-400">
-                  R {(interviewForm.transportVoucherCents / 100).toFixed(0)} Voucher
+                  R {(interviewForm.transportVoucherCents / 100).toFixed(0)}{" "}
+                  Voucher
                 </span>
               </div>
               <div className="text-muted-foreground text-[11px]">
-                Credited via secure SMS / WhatsApp code valid with local taxi rank associations.
+                Credited via secure SMS / WhatsApp code valid with local taxi
+                rank associations.
               </div>
             </div>
 
@@ -712,7 +757,10 @@ export default function EmployerDashboardPage() {
                   type="date"
                   value={interviewForm.interviewDate}
                   onChange={(e) =>
-                    setInterviewForm({ ...interviewForm, interviewDate: e.target.value })
+                    setInterviewForm({
+                      ...interviewForm,
+                      interviewDate: e.target.value,
+                    })
                   }
                   className="text-xs h-8"
                   required
@@ -724,7 +772,10 @@ export default function EmployerDashboardPage() {
                   type="text"
                   value={interviewForm.interviewTime}
                   onChange={(e) =>
-                    setInterviewForm({ ...interviewForm, interviewTime: e.target.value })
+                    setInterviewForm({
+                      ...interviewForm,
+                      interviewTime: e.target.value,
+                    })
                   }
                   className="text-xs h-8"
                   placeholder="e.g. 10:30 AM"
@@ -734,12 +785,17 @@ export default function EmployerDashboardPage() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-semibold">Interview Location</Label>
+              <Label className="text-xs font-semibold">
+                Interview Location
+              </Label>
               <Input
                 type="text"
                 value={interviewForm.locationAddress}
                 onChange={(e) =>
-                  setInterviewForm({ ...interviewForm, locationAddress: e.target.value })
+                  setInterviewForm({
+                    ...interviewForm,
+                    locationAddress: e.target.value,
+                  })
                 }
                 className="text-xs h-8"
                 required
@@ -747,7 +803,9 @@ export default function EmployerDashboardPage() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-semibold">Candidate Instructions</Label>
+              <Label className="text-xs font-semibold">
+                Candidate Instructions
+              </Label>
               <Textarea
                 rows={2}
                 value={interviewForm.notes}
@@ -798,7 +856,9 @@ export default function EmployerDashboardPage() {
               <Input
                 placeholder="e.g. Warehouse Inventory Assistant"
                 value={newOpp.title}
-                onChange={(e) => setNewOpp({ ...newOpp, title: e.target.value })}
+                onChange={(e) =>
+                  setNewOpp({ ...newOpp, title: e.target.value })
+                }
                 className="text-xs h-8"
                 required
               />
@@ -810,7 +870,10 @@ export default function EmployerDashboardPage() {
                 <select
                   value={newOpp.type}
                   onChange={(e) =>
-                    setNewOpp({ ...newOpp, type: e.target.value as Opportunity["type"] })
+                    setNewOpp({
+                      ...newOpp,
+                      type: e.target.value as Opportunity["type"],
+                    })
                   }
                   className="w-full h-8 text-xs bg-card border border-border rounded-md px-2 focus:outline-none"
                 >
@@ -822,31 +885,43 @@ export default function EmployerDashboardPage() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs font-semibold">Monthly Stipend (ZAR)</Label>
+                <Label className="text-xs font-semibold">
+                  Monthly Stipend (ZAR)
+                </Label>
                 <Input
                   type="number"
                   value={newOpp.stipendRands}
-                  onChange={(e) => setNewOpp({ ...newOpp, stipendRands: e.target.value })}
+                  onChange={(e) =>
+                    setNewOpp({ ...newOpp, stipendRands: e.target.value })
+                  }
                   className="text-xs h-8"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-semibold">Workplace Location</Label>
+              <Label className="text-xs font-semibold">
+                Workplace Location
+              </Label>
               <Input
                 value={newOpp.location}
-                onChange={(e) => setNewOpp({ ...newOpp, location: e.target.value })}
+                onChange={(e) =>
+                  setNewOpp({ ...newOpp, location: e.target.value })
+                }
                 className="text-xs h-8"
                 required
               />
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-semibold">Required Skills (comma-separated)</Label>
+              <Label className="text-xs font-semibold">
+                Required Skills (comma-separated)
+              </Label>
               <Input
                 value={newOpp.skills}
-                onChange={(e) => setNewOpp({ ...newOpp, skills: e.target.value })}
+                onChange={(e) =>
+                  setNewOpp({ ...newOpp, skills: e.target.value })
+                }
                 className="text-xs h-8"
               />
             </div>
