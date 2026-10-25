@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EXAMPLE_PROMPTS } from "@/constants";
+import { ROLE_STORAGE_KEY } from "@/constants/roles";
 import { getStoredProfile, saveStoredProfile } from "@/lib/store";
 import { cn } from "cn";
 import {
@@ -24,7 +25,7 @@ export default function ExperienceStoryPage() {
   const [story, setStory] = useState(profile.experienceStory || "");
   const [isExtracting, setIsExtracting] = useState(false);
 
-  const handleUsePrompt = (text: string) => {
+  const handleUsePrompt = (text: string, ) => {
     setStory((prev) => (prev ? `${prev}\n\n${text}` : text));
   };
 
@@ -47,6 +48,10 @@ export default function ExperienceStoryPage() {
 
       toast.success("Experience saved! Extracting skills...");
       router.push("/review-skills");
+
+       if (typeof window !== "undefined") {
+      localStorage.setItem(ROLE_STORAGE_KEY, 'role-user');
+    }
     } catch (err) {
       console.error("Failed to save experience:", err);
       toast.error("Could not proceed. Please try again.");
@@ -193,6 +198,7 @@ export default function ExperienceStoryPage() {
               type="submit"
               disabled={isExtracting || story.trim().length <= 50}
               size="lg"
+              
               className="w-full bg-brand-deep hover:bg-brand-deep/90 text-white font-semibold cursor-pointer disabled:opacity-50"
             >
               <span>

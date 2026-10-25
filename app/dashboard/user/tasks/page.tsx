@@ -1,8 +1,8 @@
 "use client";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MOCK_TASKS } from "@/constants/mock-data";
+import { useTasks } from "@/hooks/queries";
 import { taskToSlug } from "@/lib/slugs";
 import { getStoredProfile } from "@/lib/store";
 import { Task, YouthProfile } from "@/types";
@@ -23,64 +23,9 @@ import {
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-const APPLIED_TASKS_KEY = "kasirize_youth_applied_task_ids";
-const ACTIVE_TASKS_KEY = "kasirize_active_requester_tasks";
-
-interface RequesterTaskItem {
-  id: string;
-  title: string;
-  description: string;
-  location: string;
-  durationHours: number;
-  workersNeeded?: number;
-  budgetType?: string;
-  perWorkerPayoutRands?: number;
-  totalBudgetRands?: number;
-  skillsToLearn?: string[];
-  safetyNotes?: string;
-  requesterName?: string;
-}
-
 export default function YouthTasksDashboard() {
   const [profile] = useState<YouthProfile>(() => getStoredProfile());
-
-  // Merge mock tasks with any posted custom tasks from local storage
-  const [allTasks] = useState<Task[]>(() => {
-    let combined: Task[] = [...MOCK_TASKS];
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(ACTIVE_TASKS_KEY);
-        if (stored) {
-          const customTasks = JSON.parse(stored) as RequesterTaskItem[];
-          const adapted: Task[] = customTasks.map((ct) => ({
-            id: ct.id,
-            title: ct.title,
-            description: ct.description,
-            location: ct.location,
-            payoutCents:
-              (ct.perWorkerPayoutRands || ct.totalBudgetRands || 180) * 100,
-            estimatedTaxiFareCents: 0,
-            durationHours: ct.durationHours || 3,
-            deadline: new Date(Date.now() + 86400000).toISOString(),
-            status: "open",
-            requesterName: ct.requesterName || "Local Requester",
-            requesterType: "spaza_shop",
-            skillsRequired: ct.skillsToLearn || [
-              "Customer Service",
-              "Punctuality",
-            ],
-            safetyNotes:
-              ct.safetyNotes || "Hyper-local task, walkable distance.",
-            workersNeeded: ct.workersNeeded || 1,
-          }));
-          combined = [...adapted, ...MOCK_TASKS];
-        }
-      } catch (err) {
-        console.warn("Could not load custom requester tasks:", err);
-      }
-    }
-    return combined;
-  });
+  const { data: tasksData, isLoading } = useTasks();
 
   const [search, setSearch] = useState("");
   const [selectedLocation, setSelectedLocation] = useState<string>("all");
@@ -89,18 +34,54 @@ export default function YouthTasksDashboard() {
     "all" | "high_match" | "local_only" | "applied"
   >("all");
 
-  // Sync applied tasks state
-  const [appliedIds] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(APPLIED_TASKS_KEY);
-        if (stored) return JSON.parse(stored);
-      } catch {
-        // fallback
-      }
-    }
-    return [];
-  });
+  // Format raw database tasks
+  const allTasks: Task[] = useMemo(() => {
+    if (!tasksData?.tasks || !Array.isArray(tasksData.tasks)) return [];
+
+    return tasksData.tasks.map((t: {
+      id: string;
+      title: string;
+      description: string;
+      location: string;
+      payoutCents: number;
+      estimatedTaxiFareCents?: number;
+      durationHours?: number;
+      deadline?: string;
+      status?: string;
+      requesterName?: string;
+      skillsRequired?: string[] | string;
+      safetyNotes?: string;
+      workersNeeded?: number;
+      assignedYouthId?: string;
+    }) => ({
+      id: t.id,
+      title: t.title,
+      description: t.description,
+      location: t.location,
+      payoutCents: t.payoutCents || 15000,
+      estimatedTaxiFareCents: t.estimatedTaxiFareCents || 0,
+      durationHours: t.durationHours || 3,
+      deadline: t.deadline || new Date().toISOString(),
+      status: (t.status as Task["status"]) || "open",
+      requesterName: t.requesterName || "Local Township Enterprise",
+      requesterType: "spaza_shop",
+      skillsRequired: Array.isArray(t.skillsRequired)
+        ? t.skillsRequired
+        : typeof t.skillsRequired === "string"
+        ? JSON.parse(t.skillsRequired || "[]")
+        : ["Punctuality", "Customer Service"],
+      safetyNotes: t.safetyNotes || "Verified hyper-local task.",
+      workersNeeded: t.workersNeeded || 1,
+    }));
+  }, [tasksData]);
+
+  // Applied tasks
+  const appliedIds = useMemo(() => {
+    if (!tasksData?.tasks || !Array.isArray(tasksData.tasks)) return [];
+    return tasksData.tasks
+      .filter((t: { assignedYouthId?: string }) => t.assignedYouthId === profile?.id || t.assignedYouthId === "usr_youth_01")
+      .map((t: { id: string }) => t.id);
+  }, [tasksData, profile?.id]);
 
   // Calculate skills match helper
   const getSkillMatch = (taskSkills: string[]) => {
@@ -148,7 +129,6 @@ export default function YouthTasksDashboard() {
   // Filtered task results
   const filteredTasks = useMemo(() => {
     return allTasks.filter((task) => {
-      // 1. Text Search
       const matchesSearch =
         task.title.toLowerCase().includes(search.toLowerCase()) ||
         task.requesterName.toLowerCase().includes(search.toLowerCase()) ||
@@ -159,7 +139,6 @@ export default function YouthTasksDashboard() {
 
       if (!matchesSearch) return false;
 
-      // 2. Location filter
       if (
         selectedLocation !== "all" &&
         !task.location.toLowerCase().includes(selectedLocation.toLowerCase())
@@ -167,7 +146,6 @@ export default function YouthTasksDashboard() {
         return false;
       }
 
-      // 3. Duration filter
       if (selectedDuration === "short" && task.durationHours > 3) return false;
       if (
         selectedDuration === "half_day" &&
@@ -177,7 +155,6 @@ export default function YouthTasksDashboard() {
       if (selectedDuration === "full_day" && task.durationHours < 7)
         return false;
 
-      // 4. Tab quick filters
       const isApplied = appliedIds.includes(task.id);
       if (selectedTab === "applied" && !isApplied) return false;
 
@@ -230,7 +207,7 @@ export default function YouthTasksDashboard() {
           <div className="relative">
             <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
-              placeholder="Search by task title, skill (e.g. Stocking, Barista), requester, or township..."
+              placeholder="Search by task title, skill, requester, or township..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 bg-card text-xs pr-8"
@@ -295,7 +272,6 @@ export default function YouthTasksDashboard() {
 
           {/* Filter Dropdowns / Secondary Row */}
           <div className="flex flex-row items-center gap-2 text-xs">
-            {/* Location selector */}
             <div className="flex items-center gap-1.5 bg-card border border-border px-2.5 py-1.5 rounded-md">
               <MapPin className="size-3 text-muted-foreground" />
               <span className="text-muted-foreground font-medium">Area:</span>
@@ -315,7 +291,6 @@ export default function YouthTasksDashboard() {
               </select>
             </div>
 
-            {/* Duration selector */}
             <div className="flex items-center gap-1.5 bg-card border border-border px-2.5 py-1.5 rounded-md">
               <Clock className="size-3 text-muted-foreground" />
               <span className="text-muted-foreground font-medium">
@@ -350,8 +325,12 @@ export default function YouthTasksDashboard() {
           </div>
         </div>
 
-        {/* ─── TASKS GRID (CARD ROUTES DIRECTLY TO FULL DETAILS PAGE) ─── */}
-        {filteredTasks.length === 0 ? (
+        {/* ─── TASKS GRID ─── */}
+        {isLoading ? (
+          <div className="p-12 text-center text-xs text-muted-foreground">
+            Loading tasks from Neon database...
+          </div>
+        ) : filteredTasks.length === 0 ? (
           <div className="p-8 text-center rounded-card bg-card border border-border space-y-3">
             <div className="size-10 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
               <Filter className="size-5" />
@@ -363,19 +342,6 @@ export default function YouthTasksDashboard() {
               Try adjusting your search criteria, clearing filters, or exploring
               different areas nearby.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSearch("");
-                setSelectedLocation("all");
-                setSelectedDuration("all");
-                setSelectedTab("all");
-              }}
-              className="text-xs"
-            >
-              Show all available tasks
-            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">

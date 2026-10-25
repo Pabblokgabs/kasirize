@@ -12,6 +12,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useLiveUserData } from "@/hooks/queries";
+import { getStoredAuthUser } from "@/lib/auth";
+import { useKasirizeStore } from "@/store/kasirize-store";
 import {
   ArrowLeft,
   Check,
@@ -26,7 +29,7 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 const STORAGE_KEY = "kasirize_mentor_profile";
@@ -76,6 +79,12 @@ const DEFAULT_BANKING: BankingData = {
 };
 
 export default function MentorProfilePage() {
+  const authUserFromStore = useKasirizeStore((state) => state.authUser);
+  const authUser = authUserFromStore || getStoredAuthUser();
+  const activeEmail = authUser?.email || "bongani@sowetoartisan.org.za";
+
+  const { data: liveData } = useLiveUserData(activeEmail);
+
   const [profile, setProfile] = useState<MentorProfileData>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -87,6 +96,23 @@ export default function MentorProfilePage() {
     }
     return DEFAULT_MENTOR_PROFILE;
   });
+
+  // Sync profile with currently logged in mentor / Neon live data
+  useEffect(() => {
+    if (liveData?.user || authUser) {
+      const u = liveData?.user || authUser;
+      setProfile((prev) => ({
+        ...prev,
+        fullName: u?.name || prev.fullName,
+        contactEmail: u?.email || prev.contactEmail,
+        location: u?.location || prev.location,
+        bio: u?.bio || prev.bio,
+      }));
+      if (liveData?.user?.isVerifiedBadge !== undefined) {
+        setIsVerified(Boolean(liveData.user.isVerifiedBadge));
+      }
+    }
+  }, [liveData, authUser]);
 
   const [banking, setBanking] = useState<BankingData>(() => {
     if (typeof window !== "undefined") {

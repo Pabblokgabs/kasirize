@@ -1,10 +1,26 @@
-import { MOCK_YOUTH_PROFILES } from "@/constants/mock-data";
 import {
   DEMO_DATA_STORAGE_KEY,
   ROLE_STORAGE_KEY,
   UserRole,
 } from "@/constants/roles";
+import { getStoredAuthUser } from "@/lib/auth";
 import { Opportunity, ProfileSkill, Task, YouthProfile } from "@/types";
+
+export const DEFAULT_GUEST_PROFILE: YouthProfile = {
+  id: "usr_youth_guest",
+  fullName: "Guest Job Seeker",
+  email: "guest.youth@kasirize.org.za",
+  location: "Soweto",
+  province: "Gauteng",
+  experienceStory: "Exploring verified township work and skills opportunities.",
+  overallConfidenceScore: 65,
+  mockWalletCents: 0,
+  completedTasksCount: 0,
+  savedOpportunities: [],
+  transportStipendEligible: true,
+  createdAt: new Date().toISOString(),
+  skills: [],
+};
 
 export interface KasirizeStoreState {
   currentRole: UserRole;
@@ -22,21 +38,80 @@ export interface KasirizeStoreState {
 // Client-safe LocalStorage helper
 export function getStoredRole(): UserRole {
   if (typeof window === "undefined") return "role-user";
+  const authUser = getStoredAuthUser();
+  if (authUser?.role) return authUser.role;
   const stored = localStorage.getItem(ROLE_STORAGE_KEY) as UserRole | null;
   return stored || "role-user";
 }
 
 export function getStoredProfile(): YouthProfile {
-  if (typeof window === "undefined") return MOCK_YOUTH_PROFILES[0];
+  if (typeof window === "undefined") return DEFAULT_GUEST_PROFILE;
   try {
     const raw = localStorage.getItem(DEMO_DATA_STORAGE_KEY);
     if (raw) {
-      return JSON.parse(raw) as YouthProfile;
+      const parsed = JSON.parse(raw) as YouthProfile;
+      // If user is logged in, prioritize their identity
+      const authUser = getStoredAuthUser();
+      if (authUser && !authUser.isGuest && parsed.email !== authUser.email && authUser.email) {
+        return {
+          ...parsed,
+          id: authUser.id,
+          fullName: authUser.name,
+          email: authUser.email,
+          location: authUser.location?.split(",")[0] || parsed.location,
+          province: authUser.location?.split(",")[1]?.trim() || parsed.province,
+        };
+      }
+      return parsed;
     }
   } catch (err) {
-    console.warn("Failed to parse stored profile, falling back to mock:", err);
+    console.warn("Failed to parse stored profile, falling back to default:", err);
   }
-  return MOCK_YOUTH_PROFILES[0];
+
+  // If no manually saved draft, build directly from logged in user
+  const authUser = getStoredAuthUser();
+  if (authUser) {
+    return {
+      id: authUser.id,
+      fullName: authUser.name,
+      email: authUser.email,
+      location: authUser.location?.split(",")[0] || "Soweto",
+      province: authUser.location?.split(",")[1]?.trim() || "Gauteng",
+      experienceStory: authUser.isGuest
+        ? "Exploring verified township work and skills opportunities."
+        : "High reliability logistics and store assistant with verified completed township tasks.",
+      overallConfidenceScore: authUser.isGuest ? 65 : 91,
+      mockWalletCents: authUser.isGuest ? 0 : 45000,
+      completedTasksCount: authUser.isGuest ? 0 : 14,
+      savedOpportunities: ["opp_01"],
+      transportStipendEligible: true,
+      createdAt: new Date().toISOString(),
+      skills: authUser.isGuest
+        ? []
+        : [
+            {
+              id: "s-1",
+              skillId: "sk_delivery",
+              skillName: "Delivery Management",
+              status: "task_verified",
+              confidence: 93,
+              userApproved: true,
+              endorsedBy: "Sipho Nkosi",
+            },
+            {
+              id: "s-2",
+              skillId: "sk_stocktake",
+              skillName: "Stocktaking",
+              status: "task_verified",
+              confidence: 88,
+              userApproved: true,
+              endorsedBy: "Sipho Nkosi",
+            },
+          ],
+    };
+  }
+
+  return DEFAULT_GUEST_PROFILE;
 }
 
 export function saveStoredProfile(profile: YouthProfile): void {

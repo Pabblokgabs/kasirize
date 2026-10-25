@@ -10,7 +10,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useLiveUserData } from "@/hooks/queries";
+import { getStoredAuthUser } from "@/lib/auth";
 import { getStoredProfile, saveStoredProfile } from "@/lib/store";
+import { useKasirizeStore } from "@/store/kasirize-store";
 import { ProfileSkill, YouthProfile } from "@/types";
 import {
   ArrowRight,
@@ -30,16 +33,63 @@ import {
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 const USER_ACCOUNT_KEY = "kasirize_registered_user_account";
 const USER_VERIFICATION_KEY = "kasirize_user_identity_verified";
 
 export default function YouthProfileDetailPage() {
+  const authUserFromStore = useKasirizeStore((state) => state.authUser);
+  const authUser = authUserFromStore || getStoredAuthUser();
+  const activeEmail = authUser?.email || "kagiso@kasirize.org.za";
+
+  const { data: liveData } = useLiveUserData(activeEmail);
+
   const [profile, setProfile] = useState<YouthProfile>(() =>
     getStoredProfile(),
   );
+
+  // Sync with live Neon data when available
+  useEffect(() => {
+    if (liveData?.profile || liveData?.user) {
+      const uName = liveData.user?.name || profile.fullName;
+      const uLocation = liveData.user?.location || profile.location;
+      const uStory = liveData.profile?.experienceStory || profile.experienceStory;
+      const uHeadline = liveData.profile?.headline || uStory?.slice(0, 60) || "Job seeker & practical township task worker";
+
+      setEditName(uName);
+      setEditLocation(uLocation);
+      setEditHeadline(uHeadline);
+      setStoryText(uStory || "");
+      setAccountEmail(liveData.user?.email || profile.email);
+      setHasAccount(!liveData.user?.isGuest);
+      setIsUserVerified(Boolean(liveData.user?.isVerifiedBadge));
+
+      setProfile((prev) => ({
+        ...prev,
+        id: liveData.profile?.userId || liveData.user?.id || prev.id,
+        fullName: uName,
+        email: liveData.user?.email || prev.email,
+        location: uLocation,
+        province: liveData.user?.province || prev.province,
+        experienceStory: uStory,
+        overallConfidenceScore: liveData.profile?.confidenceScore || liveData.user?.confidenceScore || prev.overallConfidenceScore,
+        mockWalletCents: liveData.profile?.walletBalanceCents ?? prev.mockWalletCents,
+        completedTasksCount: liveData.profile?.completedTasksCount ?? prev.completedTasksCount,
+        skills: (liveData.skills || []).length > 0
+          ? liveData.skills.map((s: { id: string; skillId: string; skillName: string; verified: boolean; confidenceScore: number }) => ({
+              id: s.id,
+              skillId: s.skillId,
+              skillName: s.skillName,
+              status: s.verified ? ("task_verified" as const) : ("self_declared" as const),
+              confidence: s.confidenceScore || 85,
+              userApproved: true,
+            }))
+          : prev.skills,
+      }));
+    }
+  }, [liveData]);
 
   // Account & User Verification State (default to guest / not created account yet)
   const [hasAccount, setHasAccount] = useState<boolean>(() => {

@@ -13,6 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useLiveUserData } from "@/hooks/queries";
+import { getStoredAuthUser } from "@/lib/auth";
+import { useKasirizeStore } from "@/store/kasirize-store";
 import {
   ArrowLeft,
   Award,
@@ -25,7 +28,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 const PROFILE_KEY = "kasirize_employer_profile";
@@ -61,6 +64,12 @@ const DEFAULT_EMPLOYER_PROFILE: EmployerProfileData = {
 };
 
 export default function EmployerProfilePage() {
+  const authUserFromStore = useKasirizeStore((state) => state.authUser);
+  const authUser = authUserFromStore || getStoredAuthUser();
+  const activeEmail = authUser?.email || "themba@innovatelogistics.co.za";
+
+  const { data: liveData } = useLiveUserData(activeEmail);
+
   const [profile, setProfile] = useState<EmployerProfileData>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -72,6 +81,28 @@ export default function EmployerProfilePage() {
     }
     return DEFAULT_EMPLOYER_PROFILE;
   });
+
+  // Sync profile with currently logged in user / Neon live data
+  useEffect(() => {
+    if (liveData?.user || authUser) {
+      const u = liveData?.user || authUser;
+      const empProf = liveData?.profile;
+      setProfile((prev) => ({
+        ...prev,
+        companyName: empProf?.companyName || u?.name || prev.companyName,
+        contactEmail: u?.email || prev.contactEmail,
+        location: u?.location || prev.location,
+        registrationNumber: empProf?.registrationNumber || prev.registrationNumber,
+        bbbeeLevel: empProf?.bbbeeLevel || prev.bbbeeLevel,
+        industry: empProf?.industrySector || prev.industry,
+        website: empProf?.website || prev.website,
+        description: u?.bio || prev.description,
+      }));
+      if (liveData?.user?.isVerifiedBadge !== undefined) {
+        setIsVerified(Boolean(liveData.user.isVerifiedBadge));
+      }
+    }
+  }, [liveData, authUser]);
 
   const [activePlanId] = useState<string>(() => {
     if (typeof window !== "undefined") {

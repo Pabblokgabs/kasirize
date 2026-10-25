@@ -1,9 +1,10 @@
 "use client";
 
-import { Button, buttonVariants } from "@/components/ui/button";
-import { MOCK_OPPORTUNITIES, MOCK_TASKS } from "@/constants/mock-data";
+import { buttonVariants } from "@/components/ui/button";
+import { useLiveUserData } from "@/hooks/queries";
 import { taskToSlug } from "@/lib/slugs";
-import { getStoredProfile } from "@/lib/store";
+import { getCurrentUserData } from "@/lib/user-data";
+import { useKasirizeStore } from "@/store/kasirize-store";
 import { Opportunity, Task, YouthProfile } from "@/types";
 import {
   ArrowRight,
@@ -19,103 +20,170 @@ import {
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 
-const APPLIED_TASKS_KEY = "kasirize_youth_applied_task_ids";
-const ACTIVE_TASKS_KEY = "kasirize_active_requester_tasks";
-
-interface RequesterTaskItem {
-  id: string;
-  title: string;
-  description: string;
-  location: string;
-  durationHours: number;
-  workersNeeded?: number;
-  budgetType?: string;
-  perWorkerPayoutRands?: number;
-  totalBudgetRands?: number;
-  skillsToLearn?: string[];
-  safetyNotes?: string;
-  requesterName?: string;
-}
-
 export default function YouthDashboardPage() {
-  const [profile] = useState<YouthProfile>(() =>
-    getStoredProfile(),
-  );
+  const currentData = getCurrentUserData();
+  const authUser = useKasirizeStore((state) => state.authUser);
+  const activeEmail = authUser?.email || currentData.user?.email || "kagiso@kasirize.org.za";
 
-  // Load merged list of mock tasks and any requester-posted tasks from local storage
-  const [allTasks] = useState<Task[]>(() => {
-    let combined: Task[] = [...MOCK_TASKS];
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(ACTIVE_TASKS_KEY);
-        if (stored) {
-          const customTasks = JSON.parse(stored) as RequesterTaskItem[];
-          const adapted: Task[] = customTasks.map((ct) => ({
-            id: ct.id,
-            title: ct.title,
-            description: ct.description,
-            location: ct.location,
-            payoutCents:
-              (ct.perWorkerPayoutRands || ct.totalBudgetRands || 180) * 100,
-            estimatedTaxiFareCents: 0,
-            durationHours: ct.durationHours || 3,
-            deadline: new Date(Date.now() + 86400000).toISOString(),
-            status: "open",
-            requesterName: ct.requesterName || "Local Requester",
-            requesterType: "spaza_shop",
-            skillsRequired: ct.skillsToLearn || [
-              "Customer Service",
-              "Punctuality",
-            ],
-            safetyNotes:
-              ct.safetyNotes || "Hyper-local task, walkable distance.",
-            workersNeeded: ct.workersNeeded || 1,
-          }));
-          combined = [...adapted, ...MOCK_TASKS];
-        }
-      } catch (err) {
-        console.warn("Could not load custom requester tasks:", err);
-      }
+  const { data: liveData, isLoading } = useLiveUserData(activeEmail);
+  const [expandedBreakdownTaskId, setExpandedBreakdownTaskId] = useState<string | null>(null);
+
+  // Derive profile cleanly from query result or fallback
+  const profile: YouthProfile = useMemo(() => {
+    if (liveData?.profile) {
+      return {
+        id: liveData.profile.userId || liveData.user?.id || "usr_youth_01",
+        fullName: liveData.user?.name || currentData.user?.name || "Kagiso Sithole",
+        email: liveData.user?.email || activeEmail,
+        location: liveData.profile.location || currentData.youthProfile?.location || "Soweto",
+        province: liveData.profile.province || currentData.youthProfile?.province || "Gauteng",
+        experienceStory:
+          liveData.profile.experienceStory ||
+          currentData.youthProfile?.experienceStory ||
+          "Logistics and retail assistant.",
+        overallConfidenceScore:
+          liveData.profile.confidenceScore || liveData.user?.confidenceScore || 91,
+        mockWalletCents: liveData.profile.walletBalanceCents ?? 45000,
+        completedTasksCount: liveData.profile.completedTasksCount ?? 14,
+        savedOpportunities: ["opp_01"],
+        transportStipendEligible: true,
+        createdAt: liveData.profile.createdAt || new Date().toISOString(),
+        skills: (liveData.skills || []).map(
+          (s: {
+            id: string;
+            skillId: string;
+            skillName: string;
+            verified: boolean;
+            confidenceScore: number;
+          }) => ({
+            id: s.id,
+            skillId: s.skillId,
+            skillName: s.skillName,
+            status: s.verified ? ("task_verified" as const) : ("self_declared" as const),
+            confidence: s.confidenceScore || 85,
+            userApproved: true,
+          }),
+        ),
+      };
     }
-    return combined;
-  });
-
-  const [opportunities] = useState<Opportunity[]>(
-    MOCK_OPPORTUNITIES.slice(0, 3),
-  );
-
-  // Applied tasks state synced with localStorage
-  const [appliedTaskIds] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(APPLIED_TASKS_KEY);
-        if (stored) return JSON.parse(stored);
-      } catch {
-        // fallback
+    return (
+      currentData.youthProfile || {
+        id: "usr_youth_01",
+        fullName: currentData.user.name || "Kagiso Sithole",
+        email: activeEmail,
+        location: "Soweto",
+        province: "Gauteng",
+        experienceStory: "Logistics and retail assistant.",
+        overallConfidenceScore: 91,
+        mockWalletCents: 45000,
+        completedTasksCount: 14,
+        savedOpportunities: ["opp_01"],
+        transportStipendEligible: true,
+        createdAt: new Date().toISOString(),
+        skills: [],
       }
-    }
-    return [];
-  });
-
-  const [expandedBreakdownTaskId, setExpandedBreakdownTaskId] = useState<
-    string | null
-  >(null);
-
-  // Helper to categorize skills into "Verify existing" vs "Add new skill"
-  const getSkillMatchBreakdown = (taskSkills: string[]) => {
-    const userSkillNames = (profile?.skills || []).map((s) =>
-      s.skillName.toLowerCase(),
     );
+  }, [liveData, activeEmail, currentData]);
+
+  // Derive tasks cleanly from query result
+  const allTasks: Task[] = useMemo(() => {
+    const rawList = [
+      ...(liveData?.tasks?.assigned || []),
+      ...(liveData?.tasks?.available || []),
+    ];
+
+    if (rawList.length === 0) return [];
+
+    const mapped: Task[] = rawList.map(
+      (t: {
+        id: string;
+        title: string;
+        description: string;
+        location: string;
+        payoutCents: number;
+        estimatedTaxiFareCents?: number;
+        durationHours?: number;
+        deadline?: string;
+        status?: string;
+        requesterName?: string;
+        skillsRequired?: string[] | string;
+        safetyNotes?: string;
+        workersNeeded?: number;
+      }) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        location: t.location,
+        payoutCents: t.payoutCents || 15000,
+        estimatedTaxiFareCents: t.estimatedTaxiFareCents || 0,
+        durationHours: t.durationHours || 3,
+        deadline: t.deadline || new Date().toISOString(),
+        status: (t.status as Task["status"]) || "open",
+        requesterName: t.requesterName || "Township Enterprise",
+        requesterType: "spaza_shop",
+        skillsRequired: Array.isArray(t.skillsRequired)
+          ? t.skillsRequired
+          : typeof t.skillsRequired === "string"
+          ? JSON.parse(t.skillsRequired || "[]")
+          : ["Customer Service", "Punctuality"],
+        safetyNotes: t.safetyNotes || "Verified local task.",
+        workersNeeded: t.workersNeeded || 1,
+      }),
+    );
+
+    return Array.from(new Map(mapped.map((t) => [t.id, t])).values());
+  }, [liveData]);
+
+  // Derive opportunities cleanly
+  const opportunities: Opportunity[] = useMemo(() => {
+    if (!liveData?.opportunities || !Array.isArray(liveData.opportunities)) return [];
+
+    return liveData.opportunities.slice(0, 5).map(
+      (o: {
+        id: string;
+        title: string;
+        companyName: string;
+        location: string;
+        stipendCents?: number;
+        type?: string;
+        description?: string;
+        requirements?: string[];
+      }) => ({
+        id: o.id,
+        title: o.title,
+        employerName: o.companyName,
+        employerId: "emp_1",
+        location: o.location,
+        organisationType: "retailer",
+        type: (o.type as Opportunity["type"]) || "learnership",
+        description: o.description || "",
+        requiredSkills: Array.isArray(o.requirements)
+          ? o.requirements
+          : ["Hardworking", "Punctual"],
+        applicationDeadline: new Date(Date.now() + 86400000 * 14).toISOString(),
+        monthlyStipendCents: o.stipendCents || 450000,
+        transportCreditFunded: true,
+      }),
+    );
+  }, [liveData]);
+
+  // Applied task ids
+  const appliedTaskIds: string[] = useMemo(() => {
+    return (liveData?.tasks?.assigned || []).map((t: { id: string }) => t.id);
+  }, [liveData]);
+
+  // Skill matching helper
+  const getSkillMatchBreakdown = (taskSkills: string[]) => {
+    const userSkillNames = (profile?.skills || []).map((s) => s.skillName.toLowerCase());
     const verifiedOrExisting: string[] = [];
     const newToEarn: string[] = [];
 
     taskSkills.forEach((skill) => {
       const match = userSkillNames.some(
-        (us) =>
-          us.includes(skill.toLowerCase()) || skill.toLowerCase().includes(us),
+        (us) => us.includes(skill.toLowerCase()) || skill.toLowerCase().includes(us),
       );
       if (match) {
         verifiedOrExisting.push(skill);
@@ -139,71 +207,8 @@ export default function YouthDashboardPage() {
     };
   };
 
-  // const handleSimulateCompletion = (task: Task) => {
-  //   if (!profile) return;
-  //   const payout = task.payoutCents;
-
-  //   // Add or verify skills on profile
-  //   const existingSkills = [...(profile.skills || [])];
-  //   task.skillsRequired.forEach((reqSkill) => {
-  //     const existingIdx = existingSkills.findIndex(
-  //       (s) =>
-  //         s.skillName.toLowerCase().includes(reqSkill.toLowerCase()) ||
-  //         reqSkill.toLowerCase().includes(s.skillName.toLowerCase()),
-  //     );
-  //     if (existingIdx >= 0) {
-  //       // Upgrade to verified with boosted confidence
-  //       existingSkills[existingIdx] = {
-  //         ...existingSkills[existingIdx],
-  //         status: "task_verified",
-  //         confidence: Math.min(
-  //           100,
-  //           existingSkills[existingIdx].confidence + 15,
-  //         ),
-  //         endorsedBy: task.requesterName,
-  //       };
-  //     } else {
-  //       // Add as newly proven skill
-  //       existingSkills.push({
-  //         id: `ps-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-  //         skillId: `sk-custom-${Date.now()}`,
-  //         skillName: reqSkill,
-  //         status: "task_verified",
-  //         confidence: 85,
-  //         userApproved: true,
-  //         endorsedBy: task.requesterName,
-  //       });
-  //     }
-  //   });
-
-  //   const updatedProfile: YouthProfile = {
-  //     ...profile,
-  //     skills: existingSkills,
-  //     completedTasksCount: (profile.completedTasksCount || 0) + 1,
-  //     mockWalletCents: (profile.mockWalletCents || 0) + payout,
-  //     overallConfidenceScore: Math.min(
-  //       100,
-  //       (profile.overallConfidenceScore || 65) + 6,
-  //     ),
-  //   };
-
-  //   saveStoredProfile(updatedProfile);
-  //   setProfile(updatedProfile);
-  //   toast.success(
-  //     `Task completed! R ${(payout / 100).toFixed(0)} credited & skills verified on your profile!`,
-  //   );
-  // };
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 text-muted-foreground text-sm">
-        Loading Youth Dashboard...
-      </div>
-    );
-  }
-
   const walletRands = ((profile.mockWalletCents || 0) / 100).toFixed(2);
-  const confidence = profile.overallConfidenceScore || 65;
+  const confidence = profile.overallConfidenceScore || 91;
 
   return (
     <div className="flex-1 flex flex-col font-body">
@@ -244,8 +249,7 @@ export default function YouthDashboardPage() {
                 Confidence Score: {confidence}%
               </h2>
               <p className="text-xs text-white/80 leading-relaxed mb-4">
-                Shortening the distance to jobs. Each verified task and referee
-                confirmation improves your employer match ranking.
+                Shortening the distance to jobs. Each verified task and referee confirmation improves your employer match ranking.
               </p>
 
               <div className="flex flex-wrap items-center gap-2.5 text-xs">
@@ -262,40 +266,33 @@ export default function YouthDashboardPage() {
             <div className="bg-white/10 backdrop-blur p-4 rounded-xl border border-white/15 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-white/80">Available Earnings</span>
-                <span className="font-bold text-white text-sm">
-                  R {walletRands}
-                </span>
+                <span className="font-bold text-white text-sm">R {walletRands}</span>
               </div>
               <div className="text-[11px] text-white/70">
-                Earned via confirmed local tasks. Safe escrow credited
-                immediately upon requester sign-off.
+                Earned via confirmed local tasks. Safe escrow credited immediately upon requester sign-off.
               </div>
-              <Button
-                size="sm"
-                className="w-full bg-white text-brand-deep hover:bg-white/90 font-bold text-xs shadow-xs"
+              <button
+                type="button"
+                className="w-full bg-white text-brand-deep hover:bg-white/90 font-bold text-xs py-2 px-3 rounded-md shadow-xs cursor-pointer"
                 onClick={() =>
                   toast(
-                    "Mock payout request initiated. Payouts processed every Friday.",
+                    "Payout request logged. Payouts processed every Friday directly to your wallet.",
                   )
                 }
               >
-                Withdraw Mock Earnings
-              </Button>
+                Withdraw Earnings
+              </button>
             </div>
           </div>
         </section>
 
-        {/* ─── SAFETY BANNER (INSPIRED BY Kasirize) ─── */}
+        {/* ─── SAFETY BANNER ─── */}
         <div className="p-3.5 rounded-card bg-primary/5 border border-primary/20 flex items-start gap-3">
           <Shield className="size-4.5 text-primary shrink-0 mt-0.5" />
           <div className="text-xs leading-relaxed">
-            <span className="font-bold text-foreground">
-              Safety comes first.{" "}
-            </span>
+            <span className="font-bold text-foreground">Safety comes first. </span>
             <span className="text-muted-foreground">
-              Every task shows who the requester is and their verification
-              status. You never pay to take on a task, and your payout is
-              secured in local escrow before you start.
+              Every task shows who the requester is and their verification status. You never pay to take on a task, and your payout is secured in local escrow before you start.
             </span>
           </div>
         </div>
@@ -324,8 +321,7 @@ export default function YouthDashboardPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                      {skill.status === "task_verified" ||
-                      skill.status === "referee_confirmed"
+                      {skill.status === "task_verified" || skill.status === "referee_confirmed"
                         ? "Verified"
                         : "Self-Declared"}
                     </span>
@@ -340,23 +336,22 @@ export default function YouthDashboardPage() {
                     {skill.endorsedBy
                       ? `Verified by ${skill.endorsedBy}`
                       : skill.status === "referee_confirmed"
-                        ? "Confirmed by referee"
-                        : "Derived from story"}
+                      ? "Confirmed by referee"
+                      : "Derived from profile"}
                   </div>
                 </div>
               ))
             ) : (
               <div className="p-4 rounded-card bg-card border border-border text-xs text-muted-foreground">
-                No skills added yet. Complete a task to earn your first verified
-                skill!
+                No skills added yet. Complete a task to earn your first verified skill!
               </div>
             )}
           </div>
         </section>
 
-        {/* ─── NEARBY TASKS (WITH SKILL VERIFICATION & PROFILE ADDITION) ─── */}
+        {/* ─── NEARBY TASKS ─── */}
         <section className="space-y-4">
-          <div className="hidden md:flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <h3 className="font-heading font-bold text-base text-foreground flex items-center gap-2">
                 <span>Verified Township Tasks</span>
@@ -365,8 +360,7 @@ export default function YouthDashboardPage() {
                 </span>
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Complete tasks to earn money and immediately verify or add
-                demonstrated skills to your profile.
+                Complete tasks to earn money and immediately verify or add demonstrated skills to your profile.
               </p>
             </div>
             <Link
@@ -377,349 +371,172 @@ export default function YouthDashboardPage() {
             </Link>
           </div>
 
-          <div className="flex md:hidden">
-            <div>
-              <h3 className="font-heading font-bold text-base text-foreground flex items-center gap-2">
-                Verified Township Tasks
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Complete tasks to earn money and immediately verify or add
-                demonstrated skills to your profile.
-              </p>
+          {isLoading ? (
+            <div className="p-8 text-center text-xs text-muted-foreground">
+              Loading live tasks from Neon database...
             </div>
+          ) : (
+            <div className="space-y-3.5">
+              {allTasks.map((task) => {
+                const { verifiedOrExisting, newToEarn, matchPercent } =
+                  getSkillMatchBreakdown(task.skillsRequired || []);
+                const isBreakdownOpen = expandedBreakdownTaskId === task.id;
 
-            <div className="flex flex-row items-center justify-between mt-3">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                {allTasks.length} Available
-              </span>
-              <Link
-                href="/dashboard/user/tasks"
-                className="text-xs font-semibold text-primary hover:underline shrink-0"
-              >
-                See all tasks →
-              </Link>
-            </div>
-          </div>
-
-          <div className="space-y-3.5">
-            {allTasks.map((task) => {
-              // const isApplied = appliedTaskIds.includes(task.id);
-              const { verifiedOrExisting, newToEarn, matchPercent } =
-                getSkillMatchBreakdown(task.skillsRequired || []);
-              const isBreakdownOpen = expandedBreakdownTaskId === task.id;
-
-              return (
-                <div
-                  key={task.id}
-                  className="p-4 sm:p-5 rounded-card bg-card border border-border shadow-card hover:border-primary/40 transition-all space-y-3.5"
-                >
-                  {/* Top Bar: Verification Badge, Match Score, Payout */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                        <ShieldCheck className="size-3" />
-                        <span>Verified Requester</span>
-                      </span>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-light/10 text-brand-mid">
-                        {matchPercent}% Match
-                      </span>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="text-base sm:text-lg font-heading font-bold text-foreground block">
-                        R {(task.payoutCents / 100).toFixed(0)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Title & Metadata */}
-                  <div>
-                    <h4 className="font-heading font-bold text-base text-foreground mb-1">
-                      {task.title}
-                    </h4>
-
-                    <div className="flex flex-col md:flex-row md:items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                      <span className="font-medium text-foreground">
-                        {task.requesterName}
-                      </span>
-                      <span className="hidden md:block">•</span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="size-3 text-primary" />
-                        {task.location}
-                      </span>
-                      <span className="hidden md:block">•</span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="size-3" />
-                        {task.durationHours} hrs
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* ─── SKILLS IMPACT BANNER (INSPIRATION: YOU HAVE / BUILDS) ─── */}
-                  <div className="bg-muted/50 rounded-lg p-3 text-xs space-y-2 border border-border/60">
-                    <div className="text-muted-foreground text-[11px]">
-                      {verifiedOrExisting.length > 0 &&
-                      newToEarn.length === 0 ? (
-                        <span>
-                          You have every listed skill. Finish this task to get
-                          them officially verified!
+                return (
+                  <div
+                    key={task.id}
+                    className="p-4 sm:p-5 rounded-card bg-card border border-border shadow-card hover:border-primary/40 transition-all space-y-3.5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                          <ShieldCheck className="size-3" />
+                          <span>Verified Requester</span>
                         </span>
-                      ) : verifiedOrExisting.length > 0 ? (
-                        <span>
-                          You have {verifiedOrExisting.length} of{" "}
-                          {task.skillsRequired.length} listed skills. This task
-                          also builds {newToEarn.length} new skill
-                          {newToEarn.length > 1 ? "s" : ""} on your profile.
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-light/10 text-brand-mid">
+                          {matchPercent}% Match
                         </span>
-                      ) : (
-                        <span>
-                          You do not have these skills on your profile yet.
-                          Great way to add them — you are free to apply!
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-base sm:text-lg font-heading font-bold text-foreground block">
+                          R {(task.payoutCents / 100).toFixed(0)}
                         </span>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Skill Pills: You have (Verify) vs Builds (Add to Profile) */}
-                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                      {verifiedOrExisting.length > 0 && (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[11px] font-semibold text-foreground">
-                            You have:
+                    <div>
+                      <h4 className="font-heading font-bold text-base text-foreground mb-1">
+                        {task.title}
+                      </h4>
+
+                      <div className="flex flex-col md:flex-row md:items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                        <span className="font-medium text-foreground">{task.requesterName}</span>
+                        <span className="hidden md:block">•</span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="size-3 text-primary" />
+                          {task.location}
+                        </span>
+                        <span className="hidden md:block">•</span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="size-3" />
+                          {task.durationHours} hrs
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Skills Impact */}
+                    <div className="bg-muted/50 rounded-lg p-3 text-xs space-y-2 border border-border/60">
+                      <div className="text-muted-foreground text-[11px]">
+                        {verifiedOrExisting.length > 0 && newToEarn.length === 0 ? (
+                          <span>You have every listed skill. Finish this task to get them officially verified!</span>
+                        ) : verifiedOrExisting.length > 0 ? (
+                          <span>
+                            You have {verifiedOrExisting.length} of {task.skillsRequired.length} listed skills. This task also builds {newToEarn.length} new skill{newToEarn.length > 1 ? "s" : ""} on your profile.
                           </span>
-                          {verifiedOrExisting.map((skill, idx) => (
-                            <span
-                              key={`have-${idx}`}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium text-[11px]"
-                            >
-                              <Check className="size-3" />
-                              <span>{skill}</span>
-                              <span className="text-[9px] text-primary/70 font-bold uppercase">
-                                (Verify)
-                              </span>
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                        ) : (
+                          <span>You do not have these skills on your profile yet. Great way to add them — you are free to apply!</span>
+                        )}
+                      </div>
 
-                      {newToEarn.length > 0 && (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[11px] font-semibold text-foreground">
-                            Builds:
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        {verifiedOrExisting.length > 0 && (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11px] font-semibold text-foreground">You have:</span>
+                            {verifiedOrExisting.map((skill, idx) => (
+                              <span
+                                key={`have-${idx}`}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-medium text-[11px]"
+                              >
+                                <Check className="size-3" />
+                                <span>{skill}</span>
+                                <span className="text-[9px] text-primary/70 font-bold uppercase">(Verify)</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {newToEarn.length > 0 && (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11px] font-semibold text-foreground">Builds:</span>
+                            {newToEarn.map((skill, idx) => (
+                              <span
+                                key={`build-${idx}`}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/10 text-accent font-medium text-[11px]"
+                              >
+                                <Plus className="size-3" />
+                                <span>{skill}</span>
+                                <span className="text-[9px] text-accent/80 font-bold uppercase">(Add)</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Breakdown */}
+                    {isBreakdownOpen && (
+                      <div className="rounded-xl bg-muted/40 border border-border/80 p-4 space-y-4 text-xs animate-in fade-in-50 duration-200">
+                        <p className="text-muted-foreground leading-relaxed">{task.description}</p>
+                        <div className="space-y-1.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
+                            What is asked of you
                           </span>
-                          {newToEarn.map((skill, idx) => (
-                            <span
-                              key={`build-${idx}`}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/10 text-accent font-medium text-[11px]"
-                            >
-                              <Plus className="size-3" />
-                              <span>{skill}</span>
-                              <span className="text-[9px] text-accent/80 font-bold uppercase">
-                                (Add)
-                              </span>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Expandable Match Breakdown Drawer/Card Section (Inspired by Kasirize reference) */}
-                  {isBreakdownOpen && (
-                    <div className="rounded-xl bg-muted/40 border border-border/80 p-4 space-y-4 text-xs animate-in fade-in-50 duration-200">
-                      {/* Overview summary */}
-                      <p className="text-muted-foreground leading-relaxed">
-                        {task.description}
-                      </p>
-
-                      {/* What is asked of you */}
-                      <div className="space-y-1.5">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-                          What is asked of you
-                        </span>
-                        <ul className="space-y-1 text-muted-foreground">
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full border border-foreground/40 shrink-0" />
-                            <span>
-                              Able to perform the required duties for the{" "}
-                              {task.durationHours}-hour session
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full border border-foreground/40 shrink-0" />
-                            <span>
-                              Follow requester guidelines and check in on
-                              arrival
-                            </span>
-                          </li>
-                          <li className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full border border-foreground/40 shrink-0" />
-                            <span>Arrive on time at {task.location}</span>
-                          </li>
-                        </ul>
-                      </div>
-
-                      {/* How this match is worked out */}
-                      <div className="space-y-3 pt-1">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-                          How this match is worked out
-                        </span>
-
-                        {/* Metric 1: Skills you have */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-bold text-foreground">
-                              Skills you have
-                            </span>
-                            <span className="font-medium text-muted-foreground">
-                              {verifiedOrExisting.length > 0
-                                ? Math.round(
-                                    (verifiedOrExisting.length /
-                                      (task.skillsRequired.length || 1)) *
-                                      45,
-                                  )
-                                : 0}
-                              /45
-                            </span>
-                          </div>
-                          <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
-                            <div
-                              className="bg-primary h-full transition-all"
-                              style={{
-                                width: `${(verifiedOrExisting.length / (task.skillsRequired.length || 1)) * 100}%`,
-                              }}
-                            />
-                          </div>
-                          <p className="text-[11px] text-muted-foreground">
-                            You have {verifiedOrExisting.length} of{" "}
-                            {task.skillsRequired.length} listed skills.
-                          </p>
-                        </div>
-
-                        {/* Metric 2: Getting there */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-bold text-foreground">
-                              Getting there
-                            </span>
-                            <span className="font-medium text-muted-foreground">
-                              20/20
-                            </span>
-                          </div>
-                          <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
-                            <div className="bg-primary h-full w-full" />
-                          </div>
-                          <p className="text-[11px] text-muted-foreground">
-                            Hyper-local walking distance in {task.location}. Only
-                            youth living within walking distance can take this task.
-                          </p>
-                        </div>
-
-                        {/* Metric 3: Requester safety */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-bold text-foreground">
-                              Requester safety
-                            </span>
-                            <span className="font-medium text-muted-foreground">
-                              20/20
-                            </span>
-                          </div>
-                          <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
-                            <div className="bg-primary h-full w-full" />
-                          </div>
-                          <p className="text-[11px] text-muted-foreground">
-                            This requester ({task.requesterName}) has a
-                            confirmed history on Kasirize and pre-funded escrow.
-                          </p>
-                        </div>
-
-                        {/* Metric 4: Evidence & readiness */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="font-bold text-foreground">
-                              Evidence &amp; readiness
-                            </span>
-                            <span className="font-medium text-muted-foreground">
-                              {verifiedOrExisting.length > 0 ? "12/15" : "0/15"}
-                            </span>
-                          </div>
-                          <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
-                            <div
-                              className="bg-primary h-full transition-all"
-                              style={{
-                                width:
-                                  verifiedOrExisting.length > 0 ? "80%" : "0%",
-                              }}
-                            />
-                          </div>
-                          <p className="text-[11px] text-muted-foreground">
-                            {verifiedOrExisting.length} of{" "}
-                            {task.skillsRequired.length} matching skills are
-                            verified. Completing this task can verify the rest.
-                          </p>
+                          <ul className="space-y-1 text-muted-foreground">
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full border border-foreground/40 shrink-0" />
+                              <span>Able to perform the required duties for the {task.durationHours}-hour session</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full border border-foreground/40 shrink-0" />
+                              <span>Follow requester guidelines and check in on arrival</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full border border-foreground/40 shrink-0" />
+                              <span>Arrive on time at {task.location}</span>
+                            </li>
+                          </ul>
                         </div>
                       </div>
+                    )}
 
-                      {/* Score guidance footnote */}
-                      <div className="pt-2 border-t border-border/80 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                        <Shield className="size-3.5 text-muted-foreground shrink-0" />
-                        <span>
-                          This score is guidance only. It never decides for you
-                          — you choose what to take on.
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Footer Actions */}
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-border flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedBreakdownTaskId(
-                          isBreakdownOpen ? null : task.id,
-                        )
-                      }
-                      className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <span>
-                        {isBreakdownOpen
-                          ? "Hide match details"
-                          : "Why this matches"}
-                      </span>
-                      {isBreakdownOpen ? (
-                        <ChevronUp className="size-3.5" />
-                      ) : (
-                        <ChevronDown className="size-3.5" />
-                      )}
-                    </button>
-
-                    <div className="flex items-center gap-2 ml-auto">
-                      <Link
-                        href={`/tasks/${taskToSlug(task.title)}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-brand-deep text-white hover:opacity-90 text-xs font-semibold transition-opacity"
+                    {/* Footer Actions */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-border flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedBreakdownTaskId(isBreakdownOpen ? null : task.id)}
+                        className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        <Eye className="size-3.5" />
-                        <span>{appliedTaskIds.includes(task.id) ? "View / Applied ✓" : "View Details & Apply"}</span>
-                      </Link>
+                        <span>{isBreakdownOpen ? "Hide match details" : "Why this matches"}</span>
+                        {isBreakdownOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                      </button>
+
+                      <div className="flex items-center gap-2 ml-auto">
+                        <Link
+                          href={`/tasks/${taskToSlug(task.title)}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-brand-deep text-white hover:opacity-90 text-xs font-semibold transition-opacity"
+                        >
+                          <Eye className="size-3.5" />
+                          <span>
+                            {appliedTaskIds.includes(task.id) ? "View / Applied ✓" : "View Details & Apply"}
+                          </span>
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
-        {/* ─── MATCHED CAREER OPPORTUNITIES ─── */}
+        {/* ─── MATCHED OPPORTUNITIES ─── */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-heading font-bold text-base text-foreground">
-                Matched Opportunities
-              </h3>
+              <h3 className="font-heading font-bold text-base text-foreground">Matched Opportunities</h3>
               <p className="text-xs text-muted-foreground">
-                Longer-term learnerships and jobs matching your verified
-                competencies.
+                Longer-term learnerships and jobs matching your verified competencies.
               </p>
             </div>
             <Link
@@ -747,13 +564,9 @@ export default function YouthDashboardPage() {
                         : "Market competitive"}
                     </span>
                   </div>
-                  <h4 className="font-heading font-bold text-sm text-foreground">
-                    {opp.title}
-                  </h4>
+                  <h4 className="font-heading font-bold text-sm text-foreground">{opp.title}</h4>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {opp.employerName}
-                    </span>
+                    <span className="font-medium text-foreground">{opp.employerName}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <MapPin className="size-3 text-primary" />

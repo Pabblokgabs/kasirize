@@ -34,36 +34,12 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
-export interface RequesterPlace {
-  id: string;
-  name: string;
-  category:
-    | "Spaza Shop"
-    | "Bakery"
-    | "Workshop"
-    | "Car Wash"
-    | "Community Hub"
-    | "Home Enterprise";
-  tagline: string;
-  address: string;
-  ward: string;
-  township: string;
-  operatingHours: string;
-  contactNumber: string;
-  safetyCheckPassed: boolean;
-  walkingDistanceWard: string;
-  photos: string[];
-  description: string;
-  facilities: string[];
-  stats: {
-    tasksOffered: number;
-    tasksCompleted: number;
-    youthHelped: number;
-    totalPaidOutRands: number;
-    averageRating: number;
-    repeatYouthWorkers: number;
-  };
-}
+import {
+  getRequesterPlacesForUser,
+  RequesterPlace,
+} from "@/lib/places-data";
+
+export type { RequesterPlace };
 
 const STORAGE_KEY = "kasirize_requester_business_places";
 
@@ -141,37 +117,12 @@ const DEFAULT_PLACES: RequesterPlace[] = [
 
 export default function RequesterPlacePage() {
   const [places, setPlaces] = useState<RequesterPlace[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
-        }
-      } catch {
-        // Fallback
-      }
-    }
-    return DEFAULT_PLACES;
+    return getRequesterPlacesForUser();
   });
 
   const [activePlaceId, setActivePlaceId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed[0].id;
-          }
-        }
-      } catch {
-        // Fallback
-      }
-    }
-    return DEFAULT_PLACES[0].id;
+    const list = getRequesterPlacesForUser();
+    return list.length > 0 ? list[0].id : "";
   });
 
   // Modal states

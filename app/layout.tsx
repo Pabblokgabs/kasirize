@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./sw-register";
+import Providers from "./providers";
 
 export const viewport: Viewport = {
   themeColor: "#064e3b",
@@ -43,9 +44,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
-        <Toaster position="top-center" reverseOrder={false} />
-        <ServiceWorkerRegister />
+        <Providers>
+          {children}
+          <Toaster position="top-center" reverseOrder={false} />
+          <ServiceWorkerRegister />
+        </Providers>
       </body>
     </html>
   );

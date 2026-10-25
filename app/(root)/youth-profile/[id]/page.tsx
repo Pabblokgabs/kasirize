@@ -1,7 +1,7 @@
 "use client";
 
 import { buttonVariants } from "@/components/ui/button";
-import { MOCK_YOUTH_PROFILES } from "@/constants/mock-data";
+import { getStoredAuthUser } from "@/lib/auth";
 import { getStoredProfile } from "@/lib/store";
 import { YouthProfile } from "@/types";
 import {
@@ -439,15 +439,11 @@ export default function YouthPublicProfileDetailPage() {
       return PUBLIC_CANDIDATES[rawId];
     }
 
-    // Fallback: build from stored profile or mock
-    const fallbackMock =
-      MOCK_YOUTH_PROFILES.find((p) => p.id === rawId) ||
-      MOCK_YOUTH_PROFILES[0];
-
+    const authUser = getStoredAuthUser();
     const baseName =
       rawId === "me" || rawId === "user"
-        ? storedProfile?.fullName || fallbackMock.fullName
-        : fallbackMock.fullName;
+        ? authUser?.name || storedProfile?.fullName || "Kagiso Sithole"
+        : storedProfile?.fullName || "Kagiso Sithole";
 
     return {
       id: rawId,
@@ -455,18 +451,17 @@ export default function YouthPublicProfileDetailPage() {
       headline: "Township Task Worker & Practical Competency Earner",
       bio:
         storedProfile?.experienceStory ||
-        fallbackMock.experienceStory ||
         "Dedicated young South African gaining verified practical workplace experience through neighborhood tasks and accredited mentorships.",
-      location: storedProfile?.location || fallbackMock.location,
-      province: storedProfile?.province || fallbackMock.province,
+      location: authUser?.location?.split(",")[0] || storedProfile?.location || "Soweto",
+      province: authUser?.location?.split(",")[1]?.trim() || storedProfile?.province || "Gauteng",
       phone: "+27 71 555 0192",
-      email: storedProfile?.email || fallbackMock.email || "applicant@kasirize.org.za",
+      email: authUser?.email || storedProfile?.email || "applicant@kasirize.org.za",
       education: "Grade 12 (Matric Certificate) • Kasirize Verified Skills Portfolio",
       confidenceScore: 90,
       reliabilityRate: 96,
       onTimeAttendance: 98,
       transportSupportEligible: true,
-      verifiedSkills: (fallbackMock.skills || []).map((sk) => ({
+      verifiedSkills: (storedProfile?.skills || []).map((sk) => ({
         name: sk.skillName,
         verifiedBy: sk.endorsedBy || "Verified Community Requester",
         date: "Recent",
@@ -484,7 +479,7 @@ export default function YouthPublicProfileDetailPage() {
           title: "Neighbourhood Retail & Stock Verification",
           requesterName: "Local Verified Spaza Shop",
           requesterType: "Retailer",
-          location: fallbackMock.location,
+          location: storedProfile?.location || "Soweto",
           dateCompleted: "14 Oct 2026",
           payoutRands: 250,
           earnedSkills: ["Stock Auditing", "Punctuality"],

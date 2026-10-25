@@ -1,25 +1,91 @@
+"use client";
+
 import { buttonVariants } from "@/components/ui/button";
-import { MOCK_MENTORS } from "@/constants/mock-data";
-import { ArrowLeft, MapPin, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { use, useEffect, useState } from "react";
 
-export async function generateStaticParams() {
-  return MOCK_MENTORS.map((m) => ({
-    id: m.id,
-  }));
+interface MentorDisplay {
+  id: string;
+  fullName: string;
+  roleTitle: string;
+  organization: string;
+  location: string;
+  province: string;
+  bio: string;
+  avatarUrl: string;
+  specialties: string[];
+  activeMenteesCount: number;
+  verifiedEndorsementsCount: number;
+  rating: number;
+  freeMonthlyHours: number;
 }
 
-export default async function MentorDetailPage({
+export default function MentorDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const mentor = MOCK_MENTORS.find((m) => m.id === id);
+  const { id } = use(params);
+  const [mentor, setMentor] = useState<MentorDisplay | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFoundState, setNotFoundState] = useState(false);
 
-  if (!mentor) {
+  useEffect(() => {
+    let isMounted = true;
+    async function loadMentor() {
+      try {
+        const res = await fetch(`/api/mentors`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.mentors && Array.isArray(json.mentors)) {
+            const found = json.mentors.find((m: { id: string }) => m.id === id);
+            if (found && isMounted) {
+              setMentor({
+                id: found.id,
+                fullName: found.name || "Career Mentor",
+                roleTitle: "Certified Career & Skills Mentor",
+                organization: "Kasirize Mentor Network",
+                location: found.location || "Johannesburg",
+                province: found.province || "Gauteng",
+                bio: found.bio || "Dedicated mentor guiding township youth toward verified employment and vocational mastery.",
+                avatarUrl: found.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80",
+                specialties: ["Interview Coaching", "Retail Readiness", "Workplace Discipline"],
+                activeMenteesCount: 8,
+                verifiedEndorsementsCount: 88,
+                rating: 4.9,
+                freeMonthlyHours: 10,
+              });
+              return;
+            }
+          }
+        }
+        if (isMounted) setNotFoundState(true);
+      } catch (err) {
+        console.error("Error loading mentor:", err);
+        if (isMounted) setNotFoundState(true);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadMentor();
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  if (notFoundState) {
     notFound();
+  }
+
+  if (loading || !mentor) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground text-xs text-muted-foreground gap-2">
+        <Loader2 className="size-5 animate-spin text-primary" />
+        <span>Loading mentor profile...</span>
+      </div>
+    );
   }
 
   return (

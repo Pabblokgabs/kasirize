@@ -16,6 +16,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const router = useRouter();
@@ -738,7 +739,7 @@ export default function Home() {
             <ol className="relative mx-auto max-w-3xl border-s-2 border-border ps-8 md:ps-12">
               <li className="relative pb-12 last:pb-0">
                 <span
-                  className="absolute -left-[2.35rem] md:-left-[3.35rem] top-1.5 size-4 rounded-full border-4 border-background bg-primary ring-2 ring-primary/30"
+                  className="absolute left-[-2.35rem] md:left-[-3.35rem] top-1.5 size-4 rounded-full border-4 border-background bg-primary ring-2 ring-primary/30"
                   aria-hidden="true"
                 />
                 <span className="font-heading text-sm font-bold text-primary uppercase tracking-wider">
@@ -756,7 +757,7 @@ export default function Home() {
 
               <li className="relative pb-12 last:pb-0">
                 <span
-                  className="absolute -left-[2.35rem] md:-left-[3.35rem] top-1.5 size-4 rounded-full border-4 border-background bg-primary ring-2 ring-primary/30"
+                  className="absolute left-[-2.35rem] md:left-[-3.35rem] top-1.5 size-4 rounded-full border-4 border-background bg-primary ring-2 ring-primary/30"
                   aria-hidden="true"
                 />
                 <span className="font-heading text-sm font-bold text-primary uppercase tracking-wider">
@@ -774,7 +775,7 @@ export default function Home() {
 
               <li className="relative pb-12 last:pb-0">
                 <span
-                  className="absolute -left-[2.35rem] md:-left-[3.35rem] top-1.5 size-4 rounded-full border-4 border-background bg-primary ring-2 ring-primary/30"
+                  className="absolute left-[-2.35rem] md:left-[-3.35rem] top-1.5 size-4 rounded-full border-4 border-background bg-primary ring-2 ring-primary/30"
                   aria-hidden="true"
                 />
                 <span className="font-heading text-sm font-bold text-primary uppercase tracking-wider">

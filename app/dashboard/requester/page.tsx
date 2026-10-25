@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { MOCK_TASKS, MOCK_YOUTH_PROFILES } from "@/constants/mock-data";
+import { getCurrentUserData } from "@/lib/user-data";
 import { Task } from "@/types";
 import {
   Check,
@@ -25,7 +25,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 interface AssignedWorker {
@@ -38,7 +38,11 @@ interface AssignedWorker {
 }
 
 export default function RequesterDashboardPage() {
-  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+  const currentData = getCurrentUserData();
+  const requesterName = currentData.user.name || "Kasi Fresh Mart";
+  const [stats, setStats] = useState(currentData.stats);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Rating modal state
   const [selectedTaskForRating, setSelectedTaskForRating] =
@@ -50,37 +54,88 @@ export default function RequesterDashboardPage() {
   );
   const [assignedWorkers, setAssignedWorkers] = useState<AssignedWorker[]>([]);
 
-  // Open the interactive rating modal instead of automatic completion
+  useEffect(() => {
+    let isMounted = true;
+    async function loadRequesterData() {
+      try {
+        const email = currentData.user.email || "sipho@kasifresh.co.za";
+        const res = await fetch(`/api/user/live-data?email=${encodeURIComponent(email)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.tasks && Array.isArray(json.tasks) && isMounted) {
+            const adapted: Task[] = json.tasks.map((t: {
+              id: string;
+              title: string;
+              description: string;
+              location: string;
+              payoutCents: number;
+              estimatedTaxiFareCents?: number;
+              durationHours?: number;
+              deadline?: string;
+              status?: string;
+              requesterName?: string;
+              skillsRequired?: string[] | string;
+              safetyNotes?: string;
+              workersNeeded?: number;
+              assignedYouthId?: string;
+            }) => ({
+              id: t.id,
+              title: t.title,
+              description: t.description,
+              location: t.location,
+              payoutCents: t.payoutCents || 18000,
+              estimatedTaxiFareCents: t.estimatedTaxiFareCents || 0,
+              durationHours: t.durationHours || 3,
+              deadline: t.deadline || new Date().toISOString(),
+              status: (t.status as Task["status"]) || "open",
+              requesterName: t.requesterName || requesterName,
+              requesterType: "spaza_shop",
+              skillsRequired: Array.isArray(t.skillsRequired)
+                ? t.skillsRequired
+                : typeof t.skillsRequired === "string"
+                ? JSON.parse(t.skillsRequired || "[]")
+                : ["Inventory", "Customer Care"],
+              safetyNotes: t.safetyNotes || "Verified local task.",
+              workersNeeded: t.workersNeeded || 1,
+            }));
+            setTasks(adapted);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load requester tasks:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadRequesterData();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentData.user.email, requesterName]);
+
   const handleOpenRatingModal = (task: Task) => {
     setSelectedTaskForRating(task);
 
-    // Prepare default assigned youth for this task
-    const mockAssigned: AssignedWorker[] = [
+    const defaultAssigned: AssignedWorker[] = [
       {
-        id: "y1",
-        name: MOCK_YOUTH_PROFILES[0]?.fullName || "Sipho Dlamini",
-        initials: "SD",
+        id: "usr_youth_01",
+        name: "Kagiso Sithole",
+        initials: "KS",
         rating: 5,
-        feedback: "Very diligent with stock counts and punctual.",
-        demonstratedSkills:
-          task.skillsRequired.length > 0
-            ? [...task.skillsRequired]
-            : ["Stock Auditing"],
+        feedback: "Very diligent with stock counts and arrived ahead of schedule.",
+        demonstratedSkills: task.skillsRequired.length > 0 ? [...task.skillsRequired] : ["Stock Auditing"],
       },
       {
-        id: "y2",
-        name: MOCK_YOUTH_PROFILES[1]?.fullName || "Nomvula Khumalo",
-        initials: "NK",
+        id: "usr_youth_02",
+        name: "Themba Ndaba",
+        initials: "TN",
         rating: 5,
-        feedback: "Exceptional speed and customer etiquette.",
-        demonstratedSkills:
-          task.skillsRequired.length > 0
-            ? [...task.skillsRequired]
-            : ["Customer Service"],
+        feedback: "Handled customer queues politely and quickly.",
+        demonstratedSkills: task.skillsRequired.length > 0 ? [...task.skillsRequired] : ["Customer Service"],
       },
     ];
 
-    setAssignedWorkers(mockAssigned);
+    setAssignedWorkers(defaultAssigned);
   };
 
   const toggleWorkerSkill = (workerId: string, skill: string) => {
@@ -98,19 +153,34 @@ export default function RequesterDashboardPage() {
     );
   };
 
-  const handleConfirmAndRate = () => {
+  const handleConfirmAndRate = async () => {
     if (!selectedTaskForRating) return;
+
+    try {
+      await fetch(`/api/tasks/${selectedTaskForRating.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify",
+          rating: bulkRating,
+          feedback: bulkFeedback,
+          skillsDemonstrated: selectedTaskForRating.skillsRequired,
+          reviewerId: currentData.user.id || "usr_req_01",
+          reviewerName: requesterName,
+        }),
+      });
+    } catch (err) {
+      console.warn("Could not patch task review into db:", err);
+    }
 
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === selectedTaskForRating.id
-          ? { ...t, status: "completed" as const }
-          : t,
+        t.id === selectedTaskForRating.id ? { ...t, status: "completed" as const } : t,
       ),
     );
 
     toast.success(
-      "Ratings submitted and verified skills credited to youth profiles!",
+      "Task verified! Escrow payout released and skills officially recorded on youth profile.",
     );
     setSelectedTaskForRating(null);
   };
@@ -122,19 +192,19 @@ export default function RequesterDashboardPage() {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-btn bg-brand-deep flex items-center justify-center text-white font-bold text-sm">
-              K
+              {requesterName.charAt(0)}
             </div>
             <div>
               <div className="text-[11px] font-semibold text-primary uppercase tracking-wider">
                 Task Requester Dashboard
               </div>
               <h1 className="font-heading font-bold text-base text-foreground leading-tight">
-                Phiri Corner Stores &amp; Partners
+                {requesterName}
               </h1>
             </div>
           </div>
 
-          <div className="hidden md:block">
+          <div>
             <Link
               href="/dashboard/requester/post-task"
               className={buttonVariants({ size: "sm" })}
@@ -148,7 +218,7 @@ export default function RequesterDashboardPage() {
 
       {/* ─── MAIN CONTENT ─── */}
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 space-y-6">
-        {/* ─── YOUTH IMPACT & FUTURE SHAPING HERO CARD ─── */}
+        {/* ─── YOUTH IMPACT HERO CARD ─── */}
         <section className="relative overflow-hidden rounded-card bg-linear-to-br from-brand-deep via-primary-900 to-primary-950 p-6 text-white shadow-lift border border-primary-700/40">
           <div className="relative z-10 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -164,50 +234,46 @@ export default function RequesterDashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-1">
               <div className="md:col-span-2 space-y-2">
                 <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-white">
-                  You Have Directly Backed 14 Local Youth Into Meaningful Work
+                  You Have Backed Local Youth Into Real Work
                 </h2>
                 <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
                   Every short gig you offer isn&apos;t just immediate income —
                   your verified task ratings and skill endorsements build a
-                  permanent, evidence-backed CV that unlocks permanent jobs,
-                  formal learnerships, and employer trust.
+                  permanent, evidence-backed CV in the live database that unlocks jobs,
+                  learnerships, and employer trust.
                 </p>
 
                 <div className="pt-2 flex flex-wrap gap-4 text-xs font-medium text-white/90">
                   <div className="flex items-center gap-1.5">
                     <Sparkles className="size-4 text-accent" />
                     <span>
-                      <strong>24</strong> Verified Skills Endorsed on Youth
-                      Profiles
+                      <strong>24</strong> Verified Skills Endorsed on Youth Profiles
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <TrendingUp className="size-4 text-accent" />
                     <span>
-                      <strong>100%</strong> of Workers Reached Level 2
-                      Credibility
+                      <strong>100%</strong> of Workers Reached Credibility Threshold
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Impact Metric Pillar */}
               <div className="bg-white/10 rounded-card p-4 border border-white/15 backdrop-blur-xs flex flex-col justify-between">
                 <div>
                   <span className="text-[11px] font-semibold text-white/75 uppercase tracking-wider block">
                     Youth Pathways Created
                   </span>
                   <div className="font-heading text-3xl font-bold text-white mt-1">
-                    14 Youth
+                    {tasks.length > 0 ? tasks.length : 14} Gigs
                   </div>
                   <p className="text-[11px] text-white/75 mt-1">
-                    Transformed from informal gig workers into verified
-                    candidates with employer-accepted references.
+                    Transformed informal micro-tasks into verified candidates with employer-accepted references.
                   </p>
                 </div>
 
                 <div className="pt-3 border-t border-white/15 mt-3 flex items-center justify-between text-[11px] text-white/80">
-                  <span>Total Income Paid:</span>
+                  <span>Secured Escrow:</span>
                   <strong className="text-white text-sm">R 3,850</strong>
                 </div>
               </div>
@@ -219,181 +285,129 @@ export default function RequesterDashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
           <div className="p-4 rounded-card bg-card border border-border shadow-card">
             <span className="text-xs text-muted-foreground block mb-1">
-              Active Posted Tasks
+              Active Tasks
             </span>
             <span className="font-heading text-2xl font-bold text-foreground">
-              {tasks.filter((t) => t.status === "open").length}
+              {tasks.filter((t) => t.status !== "completed").length}
             </span>
           </div>
           <div className="p-4 rounded-card bg-card border border-border shadow-card">
             <span className="text-xs text-muted-foreground block mb-1">
-              Youth Applications
+              Completed Tasks
             </span>
             <span className="font-heading text-2xl font-bold text-primary">
-              12
+              {tasks.filter((t) => t.status === "completed").length}
             </span>
           </div>
           <div className="p-4 rounded-card bg-card border border-border shadow-card">
             <span className="text-xs text-muted-foreground block mb-1">
-              Tasks Completed
+              Escrow Funded
             </span>
             <span className="font-heading text-2xl font-bold text-foreground">
-              {tasks.filter((t) => t.status === "completed").length + 7}
+              R {(tasks.reduce((sum, t) => sum + t.payoutCents, 0) / 100).toLocaleString()}
             </span>
           </div>
           <div className="p-4 rounded-card bg-card border border-border shadow-card">
             <span className="text-xs text-muted-foreground block mb-1">
-              Badges Awarded
+              Safety Rating
             </span>
-            <span className="font-heading text-2xl font-bold text-accent">
-              18
+            <span className="font-heading text-2xl font-bold text-foreground">
+              5.0 ⭐
             </span>
           </div>
         </div>
 
-        {/* ─── YOUR POSTED TASKS & ACTION QUEUE ─── */}
-        <section className="space-y-3 mb-5 md:mb-5">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div className="mb-3 md:mb-0">
-              <h3 className="font-heading font-bold text-base text-foreground">
-                Your Tasks &amp; Candidate Confirmations
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Review assigned youth, endorse skills demonstrated on each task,
-                and submit ratings.
-              </p>
-            </div>
+        {/* ─── YOUR POSTED TASKS (WITH REAL CONFIRMATION/RATING) ─── */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-heading font-bold text-base text-foreground">
+              Your Posted Township Tasks ({tasks.length})
+            </h3>
             <Link
               href="/dashboard/requester/tasks"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
+              className="text-xs text-primary font-semibold hover:underline"
             >
-              Manage Active Shift Timers →
+              View Full Task Table →
             </Link>
           </div>
 
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className="p-4 rounded-card bg-card border border-border shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-              >
-                <div className="space-y-1">
+          {isLoading ? (
+            <div className="p-12 text-center text-xs text-muted-foreground">
+              Loading tasks from Neon database...
+            </div>
+          ) : tasks.length === 0 ? (
+            <div className="p-8 text-center rounded-card bg-card border border-border text-xs text-muted-foreground">
+              No tasks posted yet. Click &quot;Post New Task&quot; above to get started.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="p-4 rounded-card bg-card border border-border shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-primary/40 transition-colors"
+                >
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          task.status === "completed"
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : task.status === "in_progress"
+                            ? "bg-blue-500/10 text-blue-600"
+                            : "bg-amber-500/10 text-amber-600"
+                        }`}
+                      >
+                        {task.status.replace("_", " ")}
+                      </span>
+                      <span className="text-xs font-bold text-foreground">
+                        R {(task.payoutCents / 100).toFixed(0)} Payout
+                      </span>
+                    </div>
+
+                    <h4 className="font-heading font-bold text-sm text-foreground">
+                      {task.title}
+                    </h4>
+
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="size-3 text-primary" />
+                        {task.location}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="size-3" />
+                        {task.durationHours} hrs
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                      R {(task.payoutCents / 100).toFixed(0)} Payout
-                    </span>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="size-3" />
-                      {task.durationHours} hrs
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                      {task.status}
-                    </span>
-                  </div>
-                  <h4 className="font-heading font-bold text-sm text-foreground">
-                    {task.title}
-                  </h4>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <MapPin className="size-3 text-primary" />
-                    <span>{task.location}</span>
-                    {/* <span>•</span>
-                    <span className="text-primary font-medium">
-                      Walking distance / Local only
-                    </span> */}
-                  </div>
-
-                  {/* Skills Tagged */}
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {task.skillsRequired.map((s, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-muted text-foreground text-[10px] px-2 py-0.5 rounded font-medium"
-                      >
-                        {s}
+                    {task.status === "completed" ? (
+                      <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 bg-emerald-500/10 px-3 py-1.5 rounded-btn">
+                        <CheckCircle2 className="size-4" />
+                        <span>Verified &amp; Escrow Paid</span>
                       </span>
-                    ))}
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => handleOpenRatingModal(task)}
+                        className="bg-brand-deep hover:bg-brand-mid text-white text-xs font-semibold"
+                      >
+                        <ShieldCheck className="size-3.5 mr-1" />
+                        <span>Verify &amp; Rate Youth</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  {task.status === "open" ? (
-                    <Button
-                      size="sm"
-                      className="flex-1 sm:flex-initial text-xs font-semibold"
-                      onClick={() => handleOpenRatingModal(task)}
-                    >
-                      <CheckCircle2 className="size-3.5 mr-1" />
-                      <span>Confirm Done &amp; Rate Youth</span>
-                    </Button>
-                  ) : (
-                    <span className="text-xs font-semibold text-primary flex items-center gap-1">
-                      <ShieldCheck className="size-4" />
-                      <span>Completed &amp; Rated</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
-
-        {/* ─── ACCEPTED YOUTH PROFILES READY FOR WORK ─── */}
-        {/* <section className="space-y-3 pt-4 border-t border-border">
-          <h3 className="font-heading font-bold text-base text-foreground">
-            Top Matched Youth in Your Area
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {MOCK_YOUTH_PROFILES.map((youth) => (
-              <div
-                key={youth.id}
-                className="p-4 rounded-card bg-card border border-border shadow-card flex items-start justify-between gap-3"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-heading font-bold text-sm text-foreground">
-                      {youth.fullName}
-                    </span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                      {youth.overallConfidenceScore}% Trust
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
-                    <MapPin className="size-3 text-primary" />
-                    <span>{youth.location}</span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1">
-                    {youth.skills.slice(0, 2).map((s) => (
-                      <span
-                        key={s.id}
-                        className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium"
-                      >
-                        {s.skillName}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5 items-end">
-                  <Link
-                    href="/dashboard/requester/chat"
-                    className={buttonVariants({
-                      variant: "outline",
-                      size: "sm",
-                    })}
-                  >
-                    Direct Chat
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section> */}
       </main>
 
       {/* ─── INTERACTIVE RATING DIALOG ─── */}
       <Dialog
-        open={!!selectedTaskForRating}
+        open={Boolean(selectedTaskForRating)}
         onOpenChange={(open) => {
           if (!open) setSelectedTaskForRating(null);
         }}
@@ -413,7 +427,6 @@ export default function RequesterDashboardPage() {
 
           {selectedTaskForRating && (
             <div className="space-y-4 pt-2">
-              {/* Rating Mode: All at once or individual */}
               <div className="p-3 bg-muted/50 rounded-btn space-y-2">
                 <span className="text-xs font-bold text-foreground block">
                   Rating Method:
@@ -444,20 +457,18 @@ export default function RequesterDashboardPage() {
                 </div>
               </div>
 
-              {/* Option A: Rate All Together */}
               {rateMode === "all" ? (
-                <div className="space-y-4 bg-muted/20 p-4 rounded-btn border border-border">
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-semibold text-foreground">
-                      Performance Score (All Workers)
-                    </span>
-                    <div className="flex items-center gap-2">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-bold text-foreground block mb-1">
+                      Overall Group Star Rating:
+                    </label>
+                    <div className="flex items-center gap-1.5">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
                           type="button"
                           onClick={() => setBulkRating(star)}
-                          className="p-1 hover:scale-110 transition-transform"
                         >
                           <Star
                             className={`size-6 ${
@@ -468,43 +479,22 @@ export default function RequesterDashboardPage() {
                           />
                         </button>
                       ))}
-                      <span className="text-xs font-bold text-foreground ml-2">
-                        {bulkRating} of 5 Stars
-                      </span>
                     </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-semibold text-foreground">
-                      Team Feedback
-                    </span>
-                    <Textarea
-                      rows={2}
-                      value={bulkFeedback}
-                      onChange={(e) => setBulkFeedback(e.target.value)}
-                      className="text-xs"
-                      placeholder="Write a short reference statement for all youth on this task..."
-                    />
                   </div>
 
                   <div>
-                    <span className="text-xs font-semibold text-foreground block mb-1">
-                      Endorse Demonstrated Skills (Applied to all workers)
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedTaskForRating.skillsRequired.map((sk, idx) => (
-                        <span
-                          key={idx}
-                          className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-btn font-medium flex items-center gap-1"
-                        >
-                          <Check className="size-3.5" /> {sk}
-                        </span>
-                      ))}
-                    </div>
+                    <label className="text-xs font-bold text-foreground block mb-1">
+                      Public Recommendation / Reference:
+                    </label>
+                    <Textarea
+                      rows={3}
+                      value={bulkFeedback}
+                      onChange={(e) => setBulkFeedback(e.target.value)}
+                      className="text-xs"
+                    />
                   </div>
                 </div>
               ) : (
-                /* Option B: Rate Individually */
                 <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
                   {assignedWorkers.map((w) => (
                     <div
@@ -521,7 +511,6 @@ export default function RequesterDashboardPage() {
                           </span>
                         </div>
 
-                        {/* Stars */}
                         <div className="flex items-center gap-1">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <button
@@ -549,38 +538,6 @@ export default function RequesterDashboardPage() {
                         </div>
                       </div>
 
-                      {/* Demonstrated Skills Toggle */}
-                      <div>
-                        <span className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                          Which skills did {w.name} demonstrate good capability
-                          on?
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {selectedTaskForRating.skillsRequired.map(
-                            (sk, idx) => {
-                              const isSelected =
-                                w.demonstratedSkills.includes(sk);
-                              return (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => toggleWorkerSkill(w.id, sk)}
-                                  className={`text-[11px] px-2.5 py-1 rounded-btn font-medium border transition-all flex items-center gap-1 ${
-                                    isSelected
-                                      ? "bg-primary text-primary-foreground border-primary"
-                                      : "bg-card border-border text-muted-foreground hover:bg-muted"
-                                  }`}
-                                >
-                                  {isSelected && <Check className="size-3" />}
-                                  {sk}
-                                </button>
-                              );
-                            },
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Individual feedback */}
                       <div>
                         <Textarea
                           rows={2}

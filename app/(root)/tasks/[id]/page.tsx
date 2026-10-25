@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { MOCK_TASKS } from "@/constants/mock-data";
+import { checkActionPermission, getStoredAuthUser } from "@/lib/auth";
 import { taskToSlug } from "@/lib/slugs";
 import { getStoredProfile } from "@/lib/store";
 import { Task, YouthProfile } from "@/types";
@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   Clock,
   Coins,
+  Loader2,
   Lock,
   MapPin,
   MessageSquare,
@@ -23,26 +24,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 const APPLIED_TASKS_KEY = "kasirize_youth_applied_task_ids";
-const ACTIVE_TASKS_KEY = "kasirize_active_requester_tasks";
-
-interface RequesterTaskItem {
-  id: string;
-  title: string;
-  description: string;
-  location: string;
-  durationHours: number;
-  workersNeeded?: number;
-  budgetType?: string;
-  perWorkerPayoutRands?: number;
-  totalBudgetRands?: number;
-  skillsToLearn?: string[];
-  safetyNotes?: string;
-  requesterName?: string;
-}
 
 export default function PublicTaskDetailPage({
   params,
@@ -64,62 +49,58 @@ export default function PublicTaskDetailPage({
     return [];
   });
   const [isApplying, setIsApplying] = useState(false);
+  const [task, setTask] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Decode the URL param (handles encoded slugs like %26 for &)
   const decodedParam = decodeURIComponent(id);
 
-  // Retrieve task matching ID or slug
-  const [task] = useState<Task | null>(() => {
-    // 1. Check MOCK_TASKS
-    const directMock = MOCK_TASKS.find(
-      (t) => t.id === decodedParam || taskToSlug(t.title) === decodedParam,
-    );
-    if (directMock) return directMock;
-
-    // 2. Check localStorage custom requester tasks
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(ACTIVE_TASKS_KEY);
-        if (stored) {
-          const customTasks = JSON.parse(stored) as RequesterTaskItem[];
-          const foundCustom = customTasks.find(
-            (ct) =>
-              ct.id === decodedParam || taskToSlug(ct.title) === decodedParam,
+  useEffect(() => {
+    fetch("/api/tasks")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.tasks)) {
+          const found = data.tasks.find(
+            (t: any) =>
+              t.id === decodedParam || taskToSlug(t.title) === decodedParam,
           );
-          if (foundCustom) {
-            return {
-              id: foundCustom.id,
-              title: foundCustom.title,
-              description: foundCustom.description,
-              location: foundCustom.location,
-              payoutCents:
-                (foundCustom.perWorkerPayoutRands ||
-                  foundCustom.totalBudgetRands ||
-                  180) * 100,
-              estimatedTaxiFareCents: 0,
-              durationHours: foundCustom.durationHours || 3,
-              deadline: "In 2 days",
-              status: "open",
+          if (found) {
+            setTask({
+              id: found.id,
+              title: found.title,
+              description: found.description,
+              location: found.location,
+              payoutCents: found.payoutCents,
+              estimatedTaxiFareCents: found.estimatedTaxiFareCents || 3500,
+              durationHours: found.durationHours || 3,
+              deadline: found.scheduledDate || "Today",
+              status: found.status,
               requesterName:
-                foundCustom.requesterName || "Local Spaza Requester",
+                found.requesterName || "Verified Community Requester",
               requesterType: "spaza_shop",
-              skillsRequired: foundCustom.skillsToLearn || [
+              skillsRequired: found.requiredSkills || [
                 "Customer Service",
                 "Punctuality",
               ],
               safetyNotes:
-                foundCustom.safetyNotes ||
-                "Hyper-local task, walkable distance.",
-              workersNeeded: foundCustom.workersNeeded || 1,
-            };
+                found.safetyNotes ||
+                "Standard township safety practices apply.",
+            });
           }
         }
-      } catch {
-        // fallback
-      }
-    }
-    return null;
-  });
+      })
+      .catch((err) => console.error("Error loading task from Neon:", err))
+      .finally(() => setLoading(false));
+  }, [decodedParam]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-xs text-muted-foreground gap-2">
+        <Loader2 className="size-5 animate-spin text-primary" />
+        <span>Loading live task details...</span>
+      </div>
+    );
+  }
 
   if (!task) {
     notFound();
@@ -156,18 +137,51 @@ export default function PublicTaskDetailPage({
 
   const payoutFormatted = `R ${(task.payoutCents / 100).toFixed(2)}`;
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (isApplied) return;
+    const user = getStoredAuthUser();
+    const perm = checkActionPermission(user, "apply");
+    if (!perm.allowed) {
+      toast.error(
+        perm.reason ||
+          "Guest accounts cannot take tasks. Please sign in with a verified profile.",
+      );
+      return;
+    }
     setIsApplying(true);
-    setTimeout(() => {
+
+    try {
+      // POST to live database route to record assignment
+      await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "apply",
+          youthId: user?.id || "usr_youth_01",
+        }),
+      });
+
       const updated = [...appliedTaskIds, task.id];
       setAppliedTaskIds(updated);
       if (typeof window !== "undefined") {
         localStorage.setItem(APPLIED_TASKS_KEY, JSON.stringify(updated));
       }
-      setIsApplying(false);
+
+      toast.success(
+        `Application sent to ${task.requesterName}! Recorded in live task pipeline.`,
+      );
+    } catch (err) {
+      console.error("Task application error:", err);
+      // Fallback local update
+      const updated = [...appliedTaskIds, task.id];
+      setAppliedTaskIds(updated);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(APPLIED_TASKS_KEY, JSON.stringify(updated));
+      }
       toast.success(`Application sent to ${task.requesterName}!`);
-    }, 400);
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   return (

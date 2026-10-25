@@ -1,5 +1,7 @@
 "use client";
 
+import Footer from "@/components/footer/page";
+import NavBar from "@/components/nav-bar/page";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,54 +45,7 @@ export default function KasirizeTasksPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-body">
       {/* ─── NAVIGATION HEADER ─── */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="relative w-8 h-8 rounded-btn overflow-hidden bg-brand-deep flex items-center justify-center text-white font-bold text-lg shadow-xs">
-              <span className="font-heading">K</span>
-            </div>
-            <span className="font-heading text-xl font-bold tracking-tight text-foreground">
-              Kasirize
-            </span>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
-            <Link href="/" className="hover:text-primary transition-colors">
-              Home
-            </Link>
-            <Link
-              href="/#how-it-works"
-              className="hover:text-primary transition-colors"
-            >
-              About
-            </Link>
-            <Link
-              href="/youth-profile"
-              className="hover:text-primary transition-colors"
-            >
-              Youth Profile
-            </Link>
-            <Link
-              href="/contact-us"
-              className="hover:text-primary transition-colors"
-            >
-              Contact
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/build-profile"
-              className={buttonVariants({
-                size: "sm",
-                className: "font-semibold",
-              })}
-            >
-              Create Profile
-            </Link>
-          </div>
-        </div>
-      </header>
+      <NavBar />
 
       <main className="flex-1">
         {/* ─── HERO BANNER ─── */}
@@ -124,15 +79,10 @@ export default function KasirizeTasksPage() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
-                <Link
-                  href="#updates-form"
-                  className={buttonVariants({
-                    size: "lg",
-                    className:
-                      "bg-white text-brand-deep hover:bg-white/90 font-semibold shadow-xs",
-                  })}
-                >
-                  Find tasks near me
+                <Link href="#updates-form">
+                  <Button size="lg" className="bg-white text-primary">
+                    <span className="text-primary">Find tasks near me</span>
+                  </Button>
                 </Link>
                 <Link
                   href="#how-it-works"
@@ -466,107 +416,21 @@ export default function KasirizeTasksPage() {
               into verified experience.
             </p>
             <Link
-              href="#updates-form"
+              href="/build-profile"
               className={buttonVariants({
                 size: "lg",
                 className:
                   "bg-white text-brand-deep hover:bg-white/90 font-semibold shadow-xs",
               })}
             >
-              Browse Kasirize Tasks
+              <span className="text-primary">Create My Profile</span>
             </Link>
           </div>
         </section>
       </main>
 
       {/* ─── FOOTER ─── */}
-      <footer
-        id="contact"
-        className="bg-brand-deep/95 text-white/80 py-14 text-xs border-t border-border"
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 pb-10 border-b border-white/10">
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-btn bg-white/15 flex items-center justify-center text-white font-bold text-xs">
-                  K
-                </div>
-                <span className="font-heading font-bold text-sm text-white">
-                  Kasirize
-                </span>
-              </div>
-              <p className="text-white/80 max-w-xs leading-relaxed mb-4">
-                Open the door to what you can do.
-              </p>
-              <div className="inline-flex items-center gap-1.5 text-white/60">
-                <MapPin className="size-3.5 text-primary-foreground" />
-                <span>South Africa</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-8 md:justify-end text-sm">
-              <div className="space-y-2.5">
-                <div>
-                  <Link href="/" className="hover:text-white transition-colors">
-                    Home
-                  </Link>
-                </div>
-                <div>
-                  <Link
-                    href="/#how-it-works"
-                    className="hover:text-white transition-colors"
-                  >
-                    About
-                  </Link>
-                </div>
-                <div>
-                  <Link
-                    href="/youth-profile"
-                    className="hover:text-white transition-colors"
-                  >
-                    Youth Profile and Skills
-                  </Link>
-                </div>
-                <div>
-                  <Link
-                    href="/contact-us"
-                    className="hover:text-white transition-colors"
-                  >
-                    Contact
-                  </Link>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 sm:pl-8">
-                <div>
-                  <Link
-                    href="/tasks"
-                    className="text-white font-medium hover:underline"
-                  >
-                    Kasirize Tasks
-                  </Link>
-                </div>
-                <div>
-                  <Link
-                    href="/#roles"
-                    className="hover:text-white transition-colors"
-                  >
-                    Roles
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-white/50 text-[11px]">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="size-3 text-primary-foreground" />
-              <span>South Africa</span>
-            </div>
-            <div>© 2026 Kasirize. All rights reserved.</div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

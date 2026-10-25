@@ -8,12 +8,11 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { ROLE_STORAGE_KEY, UserRole } from "@/constants/roles";
+import { UserRole } from "@/constants/roles";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import toast from "react-hot-toast";
 
 export default function NavBar() {
   const router = useRouter();
@@ -21,21 +20,13 @@ export default function NavBar() {
 
   // Automatic role saving and onboarding routing
   const handleSelectRole = (role: UserRole) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(ROLE_STORAGE_KEY, role);
-    }
-
     if (role === "role-user") {
-      toast.success("Welcome! Starting Youth profile builder.");
       router.push("/build-profile");
     } else if (role === "role-requester") {
-      toast.success("Welcome! Starting Task Requester onboarding.");
       router.push("/onboarding?role=requester");
     } else if (role === "role-employer") {
-      toast.success("Welcome! Starting Employer onboarding.");
       router.push("/onboarding?role=employer");
     } else if (role === "role-mentor") {
-      toast.success("Welcome! Starting Skill Mentor onboarding.");
       router.push("/onboarding?role=mentor");
     }
   };

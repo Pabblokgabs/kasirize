@@ -114,6 +114,7 @@ export function RoleSidebar({ role }: RoleSidebarProps) {
           onClick={() => {
             if (typeof window !== "undefined") {
               localStorage.removeItem(ROLE_STORAGE_KEY);
+              localStorage.removeItem("kasirize_auth_user");
             }
             router.push("/");
           }}

@@ -2,9 +2,9 @@
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MOCK_OPPORTUNITIES } from "@/constants/mock-data";
+import { useApplications, useOpportunities } from "@/hooks/queries";
 import { getStoredProfile } from "@/lib/store";
-import { YouthProfile } from "@/types";
+import { Opportunity, YouthProfile } from "@/types";
 import {
   Briefcase,
   Building,
@@ -20,27 +20,56 @@ import {
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-const APPLIED_OPP_KEY = "kasirize_youth_applied_opportunity_ids";
-
 export default function YouthOpportunitiesDashboard() {
   const [profile] = useState<YouthProfile>(() => getStoredProfile());
+  const { data: oppData, isLoading: oppLoading } = useOpportunities();
+  const { data: appData, isLoading: appLoading } = useApplications();
+
   const [search, setSearch] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedTab, setSelectedTab] = useState<
     "all" | "high_match" | "transport_funded" | "applied"
   >("all");
 
-  const [appliedIds] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(APPLIED_OPP_KEY);
-        if (stored) return JSON.parse(stored);
-      } catch {
-        // fallback
-      }
-    }
-    return [];
-  });
+  const isLoading = oppLoading || appLoading;
+
+  const opportunities: Opportunity[] = useMemo(() => {
+    if (!oppData?.opportunities || !Array.isArray(oppData.opportunities)) return [];
+
+    return oppData.opportunities.map((o: {
+      id: string;
+      title: string;
+      companyName: string;
+      location: string;
+      stipendCents?: number;
+      type?: string;
+      description?: string;
+      requirements?: string[] | string;
+    }) => ({
+      id: o.id,
+      title: o.title,
+      employerName: o.companyName,
+      organisationType: "retailer",
+      location: o.location,
+      type: (o.type as Opportunity["type"]) || "learnership",
+      description: o.description || "",
+      requiredSkills: Array.isArray(o.requirements)
+        ? o.requirements
+        : typeof o.requirements === "string"
+        ? JSON.parse(o.requirements || "[]")
+        : ["Punctuality", "Teamwork"],
+      applicationDeadline: new Date(Date.now() + 86400000 * 14).toISOString(),
+      monthlyStipendCents: o.stipendCents || 450000,
+      transportCreditFunded: true,
+    }));
+  }, [oppData]);
+
+  const appliedIds = useMemo(() => {
+    if (!appData?.applications || !Array.isArray(appData.applications)) return [];
+    return appData.applications
+      .filter((a: { applicantId?: string }) => a.applicantId === profile?.id || a.applicantId === "usr_youth_01")
+      .map((a: { opportunityId: string }) => a.opportunityId);
+  }, [appData, profile?.id]);
 
   // Calculate matching percentage for opportunities based on youth's skills
   const getMatchScore = (requiredSkills: string[]) => {
@@ -75,12 +104,13 @@ export default function YouthOpportunitiesDashboard() {
   };
 
   const filtered = useMemo(() => {
-    return MOCK_OPPORTUNITIES.filter((opp) => {
+    return opportunities.filter((opp) => {
+      const oppSkills = opp.requiredSkills || [];
       const matchesSearch =
         opp.title.toLowerCase().includes(search.toLowerCase()) ||
         opp.employerName.toLowerCase().includes(search.toLowerCase()) ||
         opp.location.toLowerCase().includes(search.toLowerCase()) ||
-        opp.requiredSkills.some((s) =>
+        oppSkills.some((s: string) =>
           s.toLowerCase().includes(search.toLowerCase()),
         );
 
@@ -93,13 +123,13 @@ export default function YouthOpportunitiesDashboard() {
       if (selectedTab === "transport_funded" && !opp.transportCreditFunded)
         return false;
 
-      const { matchPercent } = getMatchScore(opp.requiredSkills);
+      const { matchPercent } = getMatchScore(oppSkills);
       if (selectedTab === "high_match" && matchPercent < 75) return false;
 
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, selectedType, selectedTab, appliedIds]);
+  }, [opportunities, search, selectedType, selectedTab, appliedIds]);
 
   return (
     <div className="flex-1 flex flex-col font-body">
@@ -153,7 +183,7 @@ export default function YouthOpportunitiesDashboard() {
                   : "bg-card border border-border text-muted-foreground hover:text-foreground"
               }`}
             >
-              All Openings ({MOCK_OPPORTUNITIES.length})
+              All Openings ({opportunities.length})
             </button>
             <button
               onClick={() => setSelectedTab("high_match")}
@@ -222,8 +252,12 @@ export default function YouthOpportunitiesDashboard() {
           </div>
         </div>
 
-        {/* ─── LIST (CARD ROUTES DIRECTLY TO FULL DETAILS PAGE) ─── */}
-        {filtered.length === 0 ? (
+        {/* ─── LIST ─── */}
+        {isLoading ? (
+          <div className="p-12 text-center text-xs text-muted-foreground">
+            Loading opportunities from Neon database...
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="p-8 text-center rounded-card bg-card border border-border space-y-3">
             <div className="size-10 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
               <Filter className="size-5" />
@@ -252,7 +286,8 @@ export default function YouthOpportunitiesDashboard() {
           <div className="space-y-3">
             {filtered.map((opp) => {
               const isApplied = appliedIds.includes(opp.id);
-              const { matchPercent } = getMatchScore(opp.requiredSkills);
+              const oppSkills = opp.requiredSkills || [];
+              const { matchPercent } = getMatchScore(oppSkills);
 
               return (
                 <div
@@ -298,7 +333,7 @@ export default function YouthOpportunitiesDashboard() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {opp.requiredSkills.map((s, idx) => (
+                      {oppSkills.map((s: string, idx: number) => (
                         <span
                           key={idx}
                           className="text-[10px] px-2 py-0.5 rounded-md bg-muted text-foreground font-medium"
@@ -309,7 +344,7 @@ export default function YouthOpportunitiesDashboard() {
                     </div>
                   </div>
 
-                  {/* Actions: Direct link to full detail page */}
+                  {/* Actions */}
                   <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
                     <Link
                       href={`/opportunities/${opp.id}`}

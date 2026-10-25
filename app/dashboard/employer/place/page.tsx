@@ -33,37 +33,12 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
-export interface EmployerPlace {
-  id: string;
-  name: string;
-  industry: string;
-  siteType:
-    | "Headquarters"
-    | "Distribution Center"
-    | "Regional Hub"
-    | "Retail Store"
-    | "Training Academy";
-  tagline: string;
-  address: string;
-  city: string;
-  province: string;
-  interviewHubAddress: string;
-  transitAccess: string;
-  contactEmail: string;
-  contactPhone: string;
-  website: string;
-  description: string;
-  photos: string[];
-  workplacePerks: string[];
-  stats: {
-    opportunitiesPosted: number;
-    hiresCompleted: number;
-    fundedVouchersIssued: number;
-    stipendPaidOutRands: number;
-    retentionRatePercent: number;
-    mentorshipHours: number;
-  };
-}
+import {
+  EmployerPlace,
+  getEmployerPlacesForUser,
+} from "@/lib/places-data";
+
+export type { EmployerPlace };
 
 const STORAGE_KEY = "kasirize_employer_workplace_sites";
 
@@ -147,37 +122,12 @@ const DEFAULT_EMPLOYER_PLACES: EmployerPlace[] = [
 
 export default function EmployerPlacePage() {
   const [places, setPlaces] = useState<EmployerPlace[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
-        }
-      } catch {
-        // Fallback
-      }
-    }
-    return DEFAULT_EMPLOYER_PLACES;
+    return getEmployerPlacesForUser();
   });
 
   const [activePlaceId, setActivePlaceId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed[0].id;
-          }
-        }
-      } catch {
-        // Fallback
-      }
-    }
-    return DEFAULT_EMPLOYER_PLACES[0].id;
+    const list = getEmployerPlacesForUser();
+    return list.length > 0 ? list[0].id : "";
   });
 
   // Modals

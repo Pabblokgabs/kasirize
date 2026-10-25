@@ -2,24 +2,53 @@
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MOCK_MENTORS } from "@/constants/mock-data";
 import { Mentor } from "@/types";
 import {
   ArrowLeft,
   GraduationCap,
+  Loader2,
   MapPin,
   Search,
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 export default function MentorsIndexPage() {
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [requestedIds, setRequestedIds] = useState<string[]>([]);
 
-  const filtered = MOCK_MENTORS.filter((m) => {
+  useEffect(() => {
+    fetch("/api/mentors")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.mentors)) {
+          const adapted: Mentor[] = data.mentors.map((m: any) => ({
+            id: m.id,
+            fullName: m.name,
+            roleTitle: "Certified Career & Skills Mentor",
+            organization: "Kasirize Mentor Network",
+            location: m.location || "Johannesburg",
+            province: m.province || "Gauteng",
+            bio: m.bio || "Dedicated mentor guiding township youth toward verified employment and vocational mastery.",
+            avatarUrl: m.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80",
+            specialties: ["Interview Coaching", "Retail Readiness", "Workplace Discipline"],
+            activeMenteesCount: 8,
+            verifiedEndorsementsCount: 88,
+            rating: 4.9,
+            freeMonthlyHours: 10,
+          }));
+          setMentors(adapted);
+        }
+      })
+      .catch((err) => console.error("Error loading live mentors:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = mentors.filter((m) => {
     return (
       m.fullName.toLowerCase().includes(search.toLowerCase()) ||
       m.organization.toLowerCase().includes(search.toLowerCase()) ||

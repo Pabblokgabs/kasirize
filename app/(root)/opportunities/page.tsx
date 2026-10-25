@@ -2,19 +2,55 @@
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MOCK_OPPORTUNITIES } from "@/constants/mock-data";
+import { checkActionPermission, getStoredAuthUser } from "@/lib/auth";
 import { Opportunity } from "@/types";
 import { ArrowLeft, Bus, MapPin, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 export default function OpportunitiesIndexPage() {
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [appliedIds, setAppliedIds] = useState<string[]>([]);
 
-  const filtered = MOCK_OPPORTUNITIES.filter((opp) => {
+  useEffect(() => {
+    fetch("/api/opportunities")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.opportunities)) {
+          const adapted: Opportunity[] = data.opportunities.map((o: any) => ({
+            id: o.id,
+            title: o.title,
+            employerName: o.companyName || "Verified Enterprise",
+            employerLogoUrl: o.companyLogoUrl,
+            organisationType: o.organisationType || "Logistics",
+            type: o.type,
+            location: o.location,
+            province: o.province || "Gauteng",
+            monthlyStipendCents: o.monthlyStipendCents || 500000,
+            vacanciesCount: o.vacanciesCount || 2,
+            applicationLimit: o.applicationLimit || 25,
+            applicationsReceived: o.applicationsReceived || 0,
+            educationLevel: o.educationLevel || "grade_12",
+            requiredSkills: o.requiredSkills || ["Customer Service", "Punctuality"],
+            description: o.description,
+            deadline: o.deadline || "2026-11-30",
+            transportCreditFunded: o.transportCreditFunded,
+            transportBudgetRands: o.transportBudgetRands || 1500,
+            isEscrowFunded: o.isEscrowFunded,
+            verifiedStatus: o.verifiedStatus || "active_live",
+          }));
+          setOpportunities(adapted);
+        }
+      })
+      .catch((err) => console.error("Error loading live opportunities:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = opportunities.filter((opp) => {
     const matchesSearch =
       opp.title.toLowerCase().includes(search.toLowerCase()) ||
       opp.employerName.toLowerCase().includes(search.toLowerCase()) ||
@@ -28,9 +64,31 @@ export default function OpportunitiesIndexPage() {
     return matchesSearch && matchesType;
   });
 
-  const handleApply = (opp: Opportunity) => {
-    setAppliedIds((prev) => [...prev, opp.id]);
-    toast.success(`Application sent to ${opp.employerName}!`);
+  const handleApply = async (opp: Opportunity) => {
+    const user = getStoredAuthUser();
+    const perm = checkActionPermission(user, "apply");
+    if (!perm.allowed) {
+      toast.error(perm.reason || "Guest accounts cannot apply. Please sign in with a verified profile.");
+      return;
+    }
+
+    try {
+      await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          opportunityId: opp.id,
+          applicantId: user?.id || "usr_youth_01",
+          transportVoucherRequested: true,
+          transportVoucherAmountCents: 8000,
+        }),
+      });
+      setAppliedIds((prev) => [...prev, opp.id]);
+      toast.success(`Application sent to ${opp.employerName}! Saved in live employer pipeline.`);
+    } catch {
+      setAppliedIds((prev) => [...prev, opp.id]);
+      toast.success(`Application sent to ${opp.employerName}!`);
+    }
   };
 
   return (

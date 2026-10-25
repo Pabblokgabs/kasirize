@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { getLiveApplicationsForCurrentUser } from "@/lib/applications-data";
 import { cn } from "cn";
 import {
   ArrowRight,
@@ -134,8 +135,46 @@ const STAGES: { id: ApplicationStage; label: string }[] = [
 ];
 
 export default function YouthApplicationsPage() {
-  const [applications, setApplications] =
-    useState<JobApplication[]>(INITIAL_APPLICATIONS);
+  const [applications, setApplications] = useState<JobApplication[]>(() => {
+    const live = getLiveApplicationsForCurrentUser();
+    if (live && live.length > 0) {
+      return live.map((a, idx) => {
+        let status: ApplicationStatus = "awaiting_reply";
+        let currentStage: ApplicationStage = "submitted";
+
+        if (a.status === "interview_invited") {
+          status = "interview";
+          currentStage = "interview";
+        } else if (a.status === "shortlisted") {
+          status = "shortlisted";
+          currentStage = "shortlisted";
+        } else if (a.status === "accepted") {
+          status = "offer";
+          currentStage = "offer";
+        } else if (a.status === "under_review") {
+          status = "viewed";
+          currentStage = "viewed";
+        }
+
+        return {
+          id: a.id,
+          refCode: `KAS-${a.id.toUpperCase()}-${idx + 10}ZA`,
+          title: a.jobTitle,
+          employerName: a.employerName,
+          type: a.type,
+          appliedDaysAgo: idx * 2 + 1,
+          status,
+          currentStage,
+          notes:
+            a.employerNotes ||
+            (a.transportVoucherApproved
+              ? `Interview confirmed on ${a.interviewDate} at ${a.interviewTime}. Taxi voucher R ${(a.transportVoucherAmountCents / 100).toFixed(0)} credited.`
+              : "Application received and tracked live."),
+        };
+      });
+    }
+    return INITIAL_APPLICATIONS;
+  });
   const [activeTab, setActiveTab] = useState<
     "all" | "awaiting" | "inprogress" | "offers" | "closed"
   >("all");

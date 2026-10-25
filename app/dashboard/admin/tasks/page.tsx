@@ -2,16 +2,43 @@
 
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MOCK_TASKS } from "@/constants/mock-data";
+import { Task } from "@/types";
 import { ArrowLeft, ChevronDown, ChevronUp, Search } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AdminTasksPage() {
-  const [tasks] = useState(MOCK_TASKS);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/tasks")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.tasks)) {
+          const adapted: Task[] = data.tasks.map((t: any) => ({
+            id: t.id,
+            title: t.title,
+            description: t.description,
+            location: t.location,
+            payoutCents: t.payoutCents,
+            estimatedTaxiFareCents: t.estimatedTaxiFareCents || 3500,
+            durationHours: t.durationHours || 3,
+            deadline: t.scheduledDate || "Today",
+            status: t.status,
+            requesterName: t.requesterName || "Verified Requester",
+            requesterType: "spaza_shop",
+            skillsRequired: t.requiredSkills || ["Customer Service", "Punctuality"],
+            safetyNotes: t.safetyNotes || "Standard safety practices apply.",
+            workersNeeded: 1,
+          }));
+          setTasks(adapted);
+        }
+      })
+      .catch((err) => console.error("Error loading tasks for admin:", err));
+  }, []);
 
   const filtered = tasks.filter((t) => {
     const matchesSearch =
