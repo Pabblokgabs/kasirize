@@ -102,6 +102,7 @@ export default function YouthDashboardPage() {
       }
     );
   }, [liveData, activeEmail, currentData]);
+  console.log(profile);
 
   // Derive tasks cleanly from query result
   const allTasks: Task[] = useMemo(() => {
@@ -197,9 +198,10 @@ export default function YouthDashboardPage() {
 
   // Skill matching helper
   const getSkillMatchBreakdown = (taskSkills: string[]) => {
-    const userSkillNames = (profile?.skills || []).map((s) =>
-      s.skillName.toLowerCase(),
-    );
+    const userSkillNames = (profile?.skills ?? [])
+      .map((s) => s.skillName?.trim().toLowerCase())
+      .filter((name): name is string => Boolean(name));
+      
     const verifiedOrExisting: string[] = [];
     const newToEarn: string[] = [];
 

@@ -211,7 +211,7 @@ export default function YouthProfileDetailPage() {
   const categorizedSkills =
     profile?.skills?.reduce(
       (acc, skill) => {
-        const name = skill.skillName.toLowerCase();
+        const name = (skill.skillName ?? "").toLowerCase();
         let category = "Customer & Sales";
         if (
           name.includes("stock") ||
