@@ -1,5 +1,6 @@
 "use client";
 
+import SkeletonTemplate from "@/components/skeleton-template/page";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,7 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { getCurrentUserData } from "@/lib/user-data";
 import { Task } from "@/types";
 import {
-  Check,
   CheckCircle2,
   Clock,
   HeartHandshake,
@@ -59,45 +59,49 @@ export default function RequesterDashboardPage() {
     async function loadRequesterData() {
       try {
         const email = currentData.user.email || "sipho@kasifresh.co.za";
-        const res = await fetch(`/api/user/live-data?email=${encodeURIComponent(email)}`);
+        const res = await fetch(
+          `/api/user/live-data?email=${encodeURIComponent(email)}`,
+        );
         if (res.ok) {
           const json = await res.json();
           if (json.tasks && Array.isArray(json.tasks) && isMounted) {
-            const adapted: Task[] = json.tasks.map((t: {
-              id: string;
-              title: string;
-              description: string;
-              location: string;
-              payoutCents: number;
-              estimatedTaxiFareCents?: number;
-              durationHours?: number;
-              deadline?: string;
-              status?: string;
-              requesterName?: string;
-              skillsRequired?: string[] | string;
-              safetyNotes?: string;
-              workersNeeded?: number;
-              assignedYouthId?: string;
-            }) => ({
-              id: t.id,
-              title: t.title,
-              description: t.description,
-              location: t.location,
-              payoutCents: t.payoutCents || 18000,
-              estimatedTaxiFareCents: t.estimatedTaxiFareCents || 0,
-              durationHours: t.durationHours || 3,
-              deadline: t.deadline || new Date().toISOString(),
-              status: (t.status as Task["status"]) || "open",
-              requesterName: t.requesterName || requesterName,
-              requesterType: "spaza_shop",
-              skillsRequired: Array.isArray(t.skillsRequired)
-                ? t.skillsRequired
-                : typeof t.skillsRequired === "string"
-                ? JSON.parse(t.skillsRequired || "[]")
-                : ["Inventory", "Customer Care"],
-              safetyNotes: t.safetyNotes || "Verified local task.",
-              workersNeeded: t.workersNeeded || 1,
-            }));
+            const adapted: Task[] = json.tasks.map(
+              (t: {
+                id: string;
+                title: string;
+                description: string;
+                location: string;
+                payoutCents: number;
+                estimatedTaxiFareCents?: number;
+                durationHours?: number;
+                deadline?: string;
+                status?: string;
+                requesterName?: string;
+                skillsRequired?: string[] | string;
+                safetyNotes?: string;
+                workersNeeded?: number;
+                assignedYouthId?: string;
+              }) => ({
+                id: t.id,
+                title: t.title,
+                description: t.description,
+                location: t.location,
+                payoutCents: t.payoutCents || 18000,
+                estimatedTaxiFareCents: t.estimatedTaxiFareCents || 0,
+                durationHours: t.durationHours || 3,
+                deadline: t.deadline || new Date().toISOString(),
+                status: (t.status as Task["status"]) || "open",
+                requesterName: t.requesterName || requesterName,
+                requesterType: "spaza_shop",
+                skillsRequired: Array.isArray(t.skillsRequired)
+                  ? t.skillsRequired
+                  : typeof t.skillsRequired === "string"
+                    ? JSON.parse(t.skillsRequired || "[]")
+                    : ["Inventory", "Customer Care"],
+                safetyNotes: t.safetyNotes || "Verified local task.",
+                workersNeeded: t.workersNeeded || 1,
+              }),
+            );
             setTasks(adapted);
           }
         }
@@ -122,8 +126,12 @@ export default function RequesterDashboardPage() {
         name: "Kagiso Sithole",
         initials: "KS",
         rating: 5,
-        feedback: "Very diligent with stock counts and arrived ahead of schedule.",
-        demonstratedSkills: task.skillsRequired.length > 0 ? [...task.skillsRequired] : ["Stock Auditing"],
+        feedback:
+          "Very diligent with stock counts and arrived ahead of schedule.",
+        demonstratedSkills:
+          task.skillsRequired.length > 0
+            ? [...task.skillsRequired]
+            : ["Stock Auditing"],
       },
       {
         id: "usr_youth_02",
@@ -131,7 +139,10 @@ export default function RequesterDashboardPage() {
         initials: "TN",
         rating: 5,
         feedback: "Handled customer queues politely and quickly.",
-        demonstratedSkills: task.skillsRequired.length > 0 ? [...task.skillsRequired] : ["Customer Service"],
+        demonstratedSkills:
+          task.skillsRequired.length > 0
+            ? [...task.skillsRequired]
+            : ["Customer Service"],
       },
     ];
 
@@ -175,7 +186,9 @@ export default function RequesterDashboardPage() {
 
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === selectedTaskForRating.id ? { ...t, status: "completed" as const } : t,
+        t.id === selectedTaskForRating.id
+          ? { ...t, status: "completed" as const }
+          : t,
       ),
     );
 
@@ -204,7 +217,7 @@ export default function RequesterDashboardPage() {
             </div>
           </div>
 
-          <div>
+          <div className="hidden md:block">
             <Link
               href="/dashboard/requester/post-task"
               className={buttonVariants({ size: "sm" })}
@@ -239,21 +252,23 @@ export default function RequesterDashboardPage() {
                 <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
                   Every short gig you offer isn&apos;t just immediate income —
                   your verified task ratings and skill endorsements build a
-                  permanent, evidence-backed CV in the live database that unlocks jobs,
-                  learnerships, and employer trust.
+                  permanent, evidence-backed CV in the live database that
+                  unlocks jobs, learnerships, and employer trust.
                 </p>
 
                 <div className="pt-2 flex flex-wrap gap-4 text-xs font-medium text-white/90">
                   <div className="flex items-center gap-1.5">
                     <Sparkles className="size-4 text-accent" />
                     <span>
-                      <strong>24</strong> Verified Skills Endorsed on Youth Profiles
+                      <strong>24</strong> Verified Skills Endorsed on Youth
+                      Profiles
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <TrendingUp className="size-4 text-accent" />
                     <span>
-                      <strong>100%</strong> of Workers Reached Credibility Threshold
+                      <strong>100%</strong> of Workers Reached Credibility
+                      Threshold
                     </span>
                   </div>
                 </div>
@@ -268,7 +283,8 @@ export default function RequesterDashboardPage() {
                     {tasks.length > 0 ? tasks.length : 14} Gigs
                   </div>
                   <p className="text-[11px] text-white/75 mt-1">
-                    Transformed informal micro-tasks into verified candidates with employer-accepted references.
+                    Transformed informal micro-tasks into verified candidates
+                    with employer-accepted references.
                   </p>
                 </div>
 
@@ -304,7 +320,10 @@ export default function RequesterDashboardPage() {
               Escrow Funded
             </span>
             <span className="font-heading text-2xl font-bold text-foreground">
-              R {(tasks.reduce((sum, t) => sum + t.payoutCents, 0) / 100).toLocaleString()}
+              R{" "}
+              {(
+                tasks.reduce((sum, t) => sum + t.payoutCents, 0) / 100
+              ).toLocaleString()}
             </span>
           </div>
           <div className="p-4 rounded-card bg-card border border-border shadow-card">
@@ -327,17 +346,20 @@ export default function RequesterDashboardPage() {
               href="/dashboard/requester/tasks"
               className="text-xs text-primary font-semibold hover:underline"
             >
-              View Full Task Table →
+              View Full Table →
             </Link>
           </div>
 
           {isLoading ? (
-            <div className="p-12 text-center text-xs text-muted-foreground">
-              Loading tasks from Neon database...
+            <div className="space-y-1.5">
+              <SkeletonTemplate className="h-5 w-1/3" />
+              <SkeletonTemplate className="h-5 w-1/2" />
+              <SkeletonTemplate className="h-28 w-full" />
             </div>
           ) : tasks.length === 0 ? (
             <div className="p-8 text-center rounded-card bg-card border border-border text-xs text-muted-foreground">
-              No tasks posted yet. Click &quot;Post New Task&quot; above to get started.
+              No tasks posted yet. Click &quot;Post New Task&quot; above to get
+              started.
             </div>
           ) : (
             <div className="space-y-3">
@@ -353,8 +375,8 @@ export default function RequesterDashboardPage() {
                           task.status === "completed"
                             ? "bg-emerald-500/10 text-emerald-600"
                             : task.status === "in_progress"
-                            ? "bg-blue-500/10 text-blue-600"
-                            : "bg-amber-500/10 text-amber-600"
+                              ? "bg-blue-500/10 text-blue-600"
+                              : "bg-amber-500/10 text-amber-600"
                         }`}
                       >
                         {task.status.replace("_", " ")}
