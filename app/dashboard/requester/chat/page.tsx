@@ -337,15 +337,8 @@ export default function RequesterChatPage() {
           <div className="p-3 border-b border-border bg-card space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Link
-                  href="/dashboard/requester"
-                  className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground md:hidden"
-                  aria-label="Back to dashboard"
-                >
-                  <ArrowLeft className="size-5" />
-                </Link>
                 <h2 className="font-heading font-bold text-base text-foreground">
-                  Task Chats
+                  Chats
                 </h2>
               </div>
               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">

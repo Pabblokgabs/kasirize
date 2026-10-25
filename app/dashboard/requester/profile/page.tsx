@@ -13,23 +13,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ROLE_STORAGE_KEY } from "@/constants/roles";
 import { useLiveUserData } from "@/hooks/queries";
 import { getStoredAuthUser } from "@/lib/auth";
 import { useKasirizeStore } from "@/store/kasirize-store";
 import {
-  ArrowLeft,
   Banknote,
   Check,
   CheckCircle2,
   CreditCard,
   ExternalLink,
+  LogOut,
   Shield,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
-  Store,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -81,6 +82,7 @@ const DEFAULT_PAYMENTS: PaymentSettings = {
 };
 
 export default function RequesterProfilePage() {
+  const router = useRouter();
   const authUserFromStore = useKasirizeStore((state) => state.authUser);
   const authUser = authUserFromStore || getStoredAuthUser();
   const activeEmail = authUser?.email || "sipho@kasirize.org.za";
@@ -115,17 +117,19 @@ export default function RequesterProfilePage() {
     }
   }, [liveData, authUser]);
 
-  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem(PAYMENT_SETTINGS_KEY);
-        if (raw) return { ...DEFAULT_PAYMENTS, ...JSON.parse(raw) };
-      } catch {
-        // fallback
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(
+    () => {
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem(PAYMENT_SETTINGS_KEY);
+          if (raw) return { ...DEFAULT_PAYMENTS, ...JSON.parse(raw) };
+        } catch {
+          // fallback
+        }
       }
-    }
-    return DEFAULT_PAYMENTS;
-  });
+      return DEFAULT_PAYMENTS;
+    },
+  );
 
   const [isVerified, setIsVerified] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -147,7 +151,9 @@ export default function RequesterProfilePage() {
     return [];
   });
 
-  const [activeTab, setActiveTab] = useState<"profile" | "verification" | "payouts">("profile");
+  const [activeTab, setActiveTab] = useState<
+    "profile" | "verification" | "payouts"
+  >("profile");
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
 
@@ -164,7 +170,10 @@ export default function RequesterProfilePage() {
   const handleSavePaymentSettings = (e: React.FormEvent) => {
     e.preventDefault();
     if (typeof window !== "undefined") {
-      localStorage.setItem(PAYMENT_SETTINGS_KEY, JSON.stringify(paymentSettings));
+      localStorage.setItem(
+        PAYMENT_SETTINGS_KEY,
+        JSON.stringify(paymentSettings),
+      );
     }
     toast.success("Escrow & payment banking details saved!");
     setSavedNotice("Banking details updated.");
@@ -177,7 +186,9 @@ export default function RequesterProfilePage() {
     if (typeof window !== "undefined") {
       localStorage.setItem(VERIFICATION_KEY, String(next));
     }
-    toast.success(next ? "Verified Requester badge activated!" : "Verified badge disabled.");
+    toast.success(
+      next ? "Verified Requester badge activated!" : "Verified badge disabled.",
+    );
     setShowVerifyModal(false);
   };
 
@@ -200,7 +211,8 @@ export default function RequesterProfilePage() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Verified businesses receive 3.4x more verified youth applications and priority neighbourhood matching.
+                Verified businesses receive 3.4x more verified youth
+                applications and priority neighbourhood matching.
               </p>
             </div>
           </div>
@@ -214,22 +226,6 @@ export default function RequesterProfilePage() {
           </Button>
         </div>
       )}
-
-      {/* ─── Back to Dashboard ─── */}
-      <div className="mb-5 flex items-center justify-between">
-        <Link
-          href="/dashboard/requester"
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <ArrowLeft className="size-4 mr-1.5" /> Back to Dashboard
-        </Link>
-        <Link
-          href="/dashboard/requester/place"
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          <Store className="size-4 mr-1.5" /> Manage Places ({registeredPlaces.length || 1})
-        </Link>
-      </div>
 
       {/* ─── Profile Header with Avatar & Badge ─── */}
       <div className="bg-card rounded-card border border-border shadow-card p-6 mb-6">
@@ -258,7 +254,9 @@ export default function RequesterProfilePage() {
               <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                 <span>Managed by {profile.ownerName}</span>
                 <span>•</span>
-                <span className="capitalize">{profile.businessType.replace("_", " ")}</span>
+                <span className="capitalize">
+                  {profile.businessType.replace("_", " ")}
+                </span>
               </p>
             </div>
           </div>
@@ -279,22 +277,36 @@ export default function RequesterProfilePage() {
         {/* Overview Numbers */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-border">
           <div className="p-3 bg-muted/40 rounded-btn text-center">
-            <p className="text-xl sm:text-2xl font-heading font-bold text-primary">14</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Tasks Completed</p>
+            <p className="text-xl sm:text-2xl font-heading font-bold text-primary">
+              14
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Tasks Completed
+            </p>
           </div>
           <div className="p-3 bg-muted/40 rounded-btn text-center">
-            <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">100%</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Escrow Release</p>
+            <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">
+              100%
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Escrow Release
+            </p>
           </div>
           <div className="p-3 bg-muted/40 rounded-btn text-center">
-            <p className="text-xl sm:text-2xl font-heading font-bold text-amber-500">4.9 ★</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Youth Trust Rating</p>
+            <p className="text-xl sm:text-2xl font-heading font-bold text-amber-500">
+              4.9 ★
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Youth Trust Rating
+            </p>
           </div>
           <div className="p-3 bg-muted/40 rounded-btn text-center">
             <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">
               {registeredPlaces.length || 1}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Active Places</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Active Places
+            </p>
           </div>
         </div>
       </div>
@@ -315,7 +327,8 @@ export default function RequesterProfilePage() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Additional tasks R30, verified requester badge R99/mo, and priority matching R149/mo.
+              Additional tasks R30, verified requester badge R99/mo, and
+              priority matching R149/mo.
             </p>
           </div>
         </div>
@@ -367,115 +380,155 @@ export default function RequesterProfilePage() {
 
       {/* ─── TAB 1: BUSINESS PROFILE ─── */}
       {activeTab === "profile" && (
-        <form
-          onSubmit={handleSaveProfile}
-          className="space-y-5 bg-card rounded-card border border-border shadow-card p-6"
-        >
-          <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div>
-              <h3 className="font-heading font-bold text-base text-foreground">
-                Enterprise &amp; Store Information
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Visible to youth candidates when they review your posted tasks.
-              </p>
+        <>
+          <form
+            onSubmit={handleSaveProfile}
+            className="space-y-5 bg-card rounded-card border border-border shadow-card p-6"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div>
+                <h3 className="font-heading font-bold text-base text-foreground">
+                  Enterprise &amp; Store Information
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Visible to youth candidates when they review your posted
+                  tasks.
+                </p>
+              </div>
+              {savedNotice && (
+                <span className="text-xs text-primary font-medium flex items-center gap-1">
+                  <Check className="size-3.5" /> {savedNotice}
+                </span>
+              )}
             </div>
-            {savedNotice && (
-              <span className="text-xs text-primary font-medium flex items-center gap-1">
-                <Check className="size-3.5" /> {savedNotice}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="businessName">Business / Brand Name</Label>
+                <Input
+                  id="businessName"
+                  required
+                  value={profile.businessName}
+                  onChange={(e) =>
+                    setProfile({ ...profile, businessName: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ownerName">Primary Contact / Owner Name</Label>
+                <Input
+                  id="ownerName"
+                  required
+                  value={profile.ownerName}
+                  onChange={(e) =>
+                    setProfile({ ...profile, ownerName: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="businessType">Enterprise Category</Label>
+                <select
+                  id="businessType"
+                  value={profile.businessType}
+                  onChange={(e) =>
+                    setProfile({ ...profile, businessType: e.target.value })
+                  }
+                  className="w-full bg-background border border-input rounded-btn px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="spaza_shop">Spaza Shop / Corner Store</option>
+                  <option value="small_business">
+                    Small Retail / Local Bakery
+                  </option>
+                  <option value="household">Household Requester</option>
+                  <option value="community_org">
+                    Community Organization / NGO
+                  </option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="emergencyContact">
+                  Emergency / CPF Contact
+                </Label>
+                <Input
+                  id="emergencyContact"
+                  placeholder="e.g. +27 11 982 4000 (Local CPF)"
+                  value={profile.emergencyContact}
+                  onChange={(e) =>
+                    setProfile({ ...profile, emergencyContact: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="phone">Phone / WhatsApp Line</Label>
+                <Input
+                  id="phone"
+                  required
+                  value={profile.phone}
+                  onChange={(e) =>
+                    setProfile({ ...profile, phone: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={profile.email}
+                  onChange={(e) =>
+                    setProfile({ ...profile, email: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="bio">
+                About Your Business &amp; Work Environment
+              </Label>
+              <Textarea
+                id="bio"
+                rows={3}
+                value={profile.bio}
+                onChange={(e) =>
+                  setProfile({ ...profile, bio: e.target.value })
+                }
+                placeholder="Tell youth workers about your business expectations, safety values, and learning opportunities..."
+              />
+            </div>
+
+            <div className="pt-3 flex items-center justify-between border-t border-border">
+              <span className="text-xs text-muted-foreground">
+                Stored locally on this device
               </span>
-            )}
-          </div>
+              <Button type="submit" className="font-semibold text-xs">
+                Save Profile Changes
+              </Button>
+            </div>
+          </form>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="businessName">Business / Brand Name</Label>
-              <Input
-                id="businessName"
-                required
-                value={profile.businessName}
-                onChange={(e) => setProfile({ ...profile, businessName: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ownerName">Primary Contact / Owner Name</Label>
-              <Input
-                id="ownerName"
-                required
-                value={profile.ownerName}
-                onChange={(e) => setProfile({ ...profile, ownerName: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="businessType">Enterprise Category</Label>
-              <select
-                id="businessType"
-                value={profile.businessType}
-                onChange={(e) => setProfile({ ...profile, businessType: e.target.value })}
-                className="w-full bg-background border border-input rounded-btn px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="spaza_shop">Spaza Shop / Corner Store</option>
-                <option value="small_business">Small Retail / Local Bakery</option>
-                <option value="household">Household Requester</option>
-                <option value="community_org">Community Organization / NGO</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="emergencyContact">Emergency / CPF Contact</Label>
-              <Input
-                id="emergencyContact"
-                placeholder="e.g. +27 11 982 4000 (Local CPF)"
-                value={profile.emergencyContact}
-                onChange={(e) => setProfile({ ...profile, emergencyContact: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone / WhatsApp Line</Label>
-              <Input
-                id="phone"
-                required
-                value={profile.phone}
-                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="bio">About Your Business &amp; Work Environment</Label>
-            <Textarea
-              id="bio"
-              rows={3}
-              value={profile.bio}
-              onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-              placeholder="Tell youth workers about your business expectations, safety values, and learning opportunities..."
-            />
-          </div>
-
-          <div className="pt-3 flex items-center justify-between border-t border-border">
-            <span className="text-xs text-muted-foreground">
-              Stored locally on this device
-            </span>
-            <Button type="submit" className="font-semibold text-xs">
-              Save Profile Changes
-            </Button>
-          </div>
-        </form>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem(ROLE_STORAGE_KEY);
+                localStorage.removeItem("kasirize_auth_user");
+              }
+              router.push("/");
+            }}
+            className="flex-1 w-full md:hidden flex items-center  justify-center gap-2 mt-10"
+          >
+            <LogOut className="size-3.5" />
+            <span>Log Out</span>
+          </Button>
+        </>
       )}
 
       {/* ─── TAB 2: COMPLIANCE & BADGES ─── */}
@@ -506,23 +559,32 @@ export default function RequesterProfilePage() {
             <div className="p-4 rounded-btn border border-border bg-muted/30 space-y-2">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="size-5 text-emerald-600" />
-                <h4 className="font-semibold text-sm text-foreground">CIPC / Informal Trading Permit</h4>
+                <h4 className="font-semibold text-sm text-foreground">
+                  CIPC / Informal Trading Permit
+                </h4>
               </div>
               <p className="text-xs text-muted-foreground">
-                Registration: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">{profile.cipcRegistrationNumber || "Not recorded"}</code>
+                Registration:{" "}
+                <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">
+                  {profile.cipcRegistrationNumber || "Not recorded"}
+                </code>
               </p>
               <p className="text-xs text-muted-foreground">
-                Confirms your business operates legally within the municipal ward boundaries.
+                Confirms your business operates legally within the municipal
+                ward boundaries.
               </p>
             </div>
 
             <div className="p-4 rounded-btn border border-border bg-muted/30 space-y-2">
               <div className="flex items-center gap-2">
                 <Check className="size-5 text-primary" />
-                <h4 className="font-semibold text-sm text-foreground">100% Escrow Guarantee</h4>
+                <h4 className="font-semibold text-sm text-foreground">
+                  100% Escrow Guarantee
+                </h4>
               </div>
               <p className="text-xs text-muted-foreground">
-                Zero payment disputes on record. Youth are assured tasks are pre-funded safely before arrival.
+                Zero payment disputes on record. Youth are assured tasks are
+                pre-funded safely before arrival.
               </p>
             </div>
           </div>
@@ -534,7 +596,8 @@ export default function RequesterProfilePage() {
                 <span>Verified Requester Badge (R99/mo)</span>
               </div>
               <p className="text-xs text-muted-foreground max-w-xl">
-                Displays the verified shield on your tasks and unlocks priority push notifications to top-rated youth in your ward.
+                Displays the verified shield on your tasks and unlocks priority
+                push notifications to top-rated youth in your ward.
               </p>
             </div>
             <Button
@@ -561,7 +624,8 @@ export default function RequesterProfilePage() {
                 Escrow Settlement &amp; Banking Details
               </h3>
               <p className="text-xs text-muted-foreground">
-                South African bank account for escrow refunds and task payment settlements.
+                South African bank account for escrow refunds and task payment
+                settlements.
               </p>
             </div>
             <Banknote className="size-5 text-primary" />
@@ -573,10 +637,17 @@ export default function RequesterProfilePage() {
               <select
                 id="bankName"
                 value={paymentSettings.bankName}
-                onChange={(e) => setPaymentSettings({ ...paymentSettings, bankName: e.target.value })}
+                onChange={(e) =>
+                  setPaymentSettings({
+                    ...paymentSettings,
+                    bankName: e.target.value,
+                  })
+                }
                 className="w-full bg-background border border-input rounded-btn px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
-                <option value="First National Bank (FNB)">First National Bank (FNB)</option>
+                <option value="First National Bank (FNB)">
+                  First National Bank (FNB)
+                </option>
                 <option value="Standard Bank">Standard Bank</option>
                 <option value="Capitec Bank">Capitec Bank</option>
                 <option value="Nedbank">Nedbank</option>
@@ -589,7 +660,12 @@ export default function RequesterProfilePage() {
               <select
                 id="accountType"
                 value={paymentSettings.accountType}
-                onChange={(e) => setPaymentSettings({ ...paymentSettings, accountType: e.target.value as "cheque" | "savings" })}
+                onChange={(e) =>
+                  setPaymentSettings({
+                    ...paymentSettings,
+                    accountType: e.target.value as "cheque" | "savings",
+                  })
+                }
                 className="w-full bg-background border border-input rounded-btn px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="cheque">Cheque / Current Account</option>
@@ -605,7 +681,12 @@ export default function RequesterProfilePage() {
                 id="accountNumber"
                 required
                 value={paymentSettings.accountNumber}
-                onChange={(e) => setPaymentSettings({ ...paymentSettings, accountNumber: e.target.value })}
+                onChange={(e) =>
+                  setPaymentSettings({
+                    ...paymentSettings,
+                    accountNumber: e.target.value,
+                  })
+                }
               />
             </div>
             <div className="space-y-1.5">
@@ -614,25 +695,39 @@ export default function RequesterProfilePage() {
                 id="branchCode"
                 required
                 value={paymentSettings.branchCode}
-                onChange={(e) => setPaymentSettings({ ...paymentSettings, branchCode: e.target.value })}
+                onChange={(e) =>
+                  setPaymentSettings({
+                    ...paymentSettings,
+                    branchCode: e.target.value,
+                  })
+                }
               />
             </div>
           </div>
 
           <div className="p-4 rounded-btn bg-muted/40 border border-border flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="autoRelease" className="text-sm font-semibold cursor-pointer">
+              <Label
+                htmlFor="autoRelease"
+                className="text-sm font-semibold cursor-pointer"
+              >
                 Automatic Escrow Release on Task Sign-Off
               </Label>
               <p className="text-xs text-muted-foreground">
-                Release funds automatically as soon as you confirm task satisfaction in the app.
+                Release funds automatically as soon as you confirm task
+                satisfaction in the app.
               </p>
             </div>
             <input
               id="autoRelease"
               type="checkbox"
               checked={paymentSettings.autoTopUpVouchers}
-              onChange={(e) => setPaymentSettings({ ...paymentSettings, autoTopUpVouchers: e.target.checked })}
+              onChange={(e) =>
+                setPaymentSettings({
+                  ...paymentSettings,
+                  autoTopUpVouchers: e.target.checked,
+                })
+              }
               className="size-4 rounded accent-primary cursor-pointer"
             />
           </div>
@@ -659,13 +754,16 @@ export default function RequesterProfilePage() {
               Verified Requester Badge
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Earn maximum trust from youth applicants with proof of business operations and guaranteed payment escrow.
+              Earn maximum trust from youth applicants with proof of business
+              operations and guaranteed payment escrow.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="p-3 rounded-btn bg-muted/50 border border-border space-y-1">
-              <p className="font-semibold text-foreground">What verification provides:</p>
+              <p className="font-semibold text-foreground">
+                What verification provides:
+              </p>
               <ul className="space-y-1 text-muted-foreground">
                 <li className="flex items-center gap-1.5">
                   <Check className="size-3 text-emerald-600" />
@@ -673,7 +771,9 @@ export default function RequesterProfilePage() {
                 </li>
                 <li className="flex items-center gap-1.5">
                   <Check className="size-3 text-emerald-600" />
-                  <span>Priority notifications to top 10% highest-rated youth</span>
+                  <span>
+                    Priority notifications to top 10% highest-rated youth
+                  </span>
                 </li>
                 <li className="flex items-center gap-1.5">
                   <Check className="size-3 text-emerald-600" />

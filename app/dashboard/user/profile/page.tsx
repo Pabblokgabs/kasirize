@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ROLE_STORAGE_KEY } from "@/constants/roles";
 import { useLiveUserData } from "@/hooks/queries";
 import { getStoredAuthUser } from "@/lib/auth";
 import { getStoredProfile, saveStoredProfile } from "@/lib/store";
@@ -23,6 +24,7 @@ import {
   FileText,
   FolderKanban,
   Lock,
+  LogOut,
   MapPin,
   Plus,
   ShieldAlert,
@@ -33,6 +35,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -40,6 +43,7 @@ const USER_ACCOUNT_KEY = "kasirize_registered_user_account";
 const USER_VERIFICATION_KEY = "kasirize_user_identity_verified";
 
 export default function YouthProfileDetailPage() {
+  const router = useRouter();
   const authUserFromStore = useKasirizeStore((state) => state.authUser);
   const authUser = authUserFromStore || getStoredAuthUser();
   const activeEmail = authUser?.email || "kagiso@kasirize.org.za";
@@ -55,8 +59,12 @@ export default function YouthProfileDetailPage() {
     if (liveData?.profile || liveData?.user) {
       const uName = liveData.user?.name || profile.fullName;
       const uLocation = liveData.user?.location || profile.location;
-      const uStory = liveData.profile?.experienceStory || profile.experienceStory;
-      const uHeadline = liveData.profile?.headline || uStory?.slice(0, 60) || "Job seeker & practical township task worker";
+      const uStory =
+        liveData.profile?.experienceStory || profile.experienceStory;
+      const uHeadline =
+        liveData.profile?.headline ||
+        uStory?.slice(0, 60) ||
+        "Job seeker & practical township task worker";
 
       setEditName(uName);
       setEditLocation(uLocation);
@@ -74,19 +82,35 @@ export default function YouthProfileDetailPage() {
         location: uLocation,
         province: liveData.user?.province || prev.province,
         experienceStory: uStory,
-        overallConfidenceScore: liveData.profile?.confidenceScore || liveData.user?.confidenceScore || prev.overallConfidenceScore,
-        mockWalletCents: liveData.profile?.walletBalanceCents ?? prev.mockWalletCents,
-        completedTasksCount: liveData.profile?.completedTasksCount ?? prev.completedTasksCount,
-        skills: (liveData.skills || []).length > 0
-          ? liveData.skills.map((s: { id: string; skillId: string; skillName: string; verified: boolean; confidenceScore: number }) => ({
-              id: s.id,
-              skillId: s.skillId,
-              skillName: s.skillName,
-              status: s.verified ? ("task_verified" as const) : ("self_declared" as const),
-              confidence: s.confidenceScore || 85,
-              userApproved: true,
-            }))
-          : prev.skills,
+        overallConfidenceScore:
+          liveData.profile?.confidenceScore ||
+          liveData.user?.confidenceScore ||
+          prev.overallConfidenceScore,
+        mockWalletCents:
+          liveData.profile?.walletBalanceCents ?? prev.mockWalletCents,
+        completedTasksCount:
+          liveData.profile?.completedTasksCount ?? prev.completedTasksCount,
+        skills:
+          (liveData.skills || []).length > 0
+            ? liveData.skills.map(
+                (s: {
+                  id: string;
+                  skillId: string;
+                  skillName: string;
+                  verified: boolean;
+                  confidenceScore: number;
+                }) => ({
+                  id: s.id,
+                  skillId: s.skillId,
+                  skillName: s.skillName,
+                  status: s.verified
+                    ? ("task_verified" as const)
+                    : ("self_declared" as const),
+                  confidence: s.confidenceScore || 85,
+                  userApproved: true,
+                }),
+              )
+            : prev.skills,
       }));
     }
   }, [liveData]);
@@ -883,6 +907,21 @@ export default function YouthProfileDetailPage() {
             </p>
           </div>
         </div>
+
+        <Button
+          variant="destructive"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              localStorage.removeItem(ROLE_STORAGE_KEY);
+              localStorage.removeItem("kasirize_auth_user");
+            }
+            router.push("/");
+          }}
+          className="flex-1 w-full md:hidden flex items-center  justify-center gap-2"
+        >
+          <LogOut className="size-3.5" />
+          <span>Log Out</span>
+        </Button>
       </main>
 
       {/* ─── MODAL: CREATE ACCOUNT (JOIN KASIRIZE) ─── */}

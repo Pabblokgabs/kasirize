@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  ArrowLeft,
   Award,
   Check,
   CheckCircle,
@@ -314,16 +313,6 @@ export default function RequesterTasksPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8 pt-6 px-4 md:px-8 max-w-5xl mx-auto font-body">
-      {/* Back button */}
-      <div className="mb-4">
-        <Link
-          href="/dashboard/requester"
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <ArrowLeft className="size-4 mr-1.5" /> Back to Dashboard
-        </Link>
-      </div>
-
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">

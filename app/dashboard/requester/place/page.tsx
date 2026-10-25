@@ -11,9 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  ArrowLeft,
   Camera,
   CheckCircle2,
   Clock,
@@ -34,10 +34,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 
-import {
-  getRequesterPlacesForUser,
-  RequesterPlace,
-} from "@/lib/places-data";
+import { getRequesterPlacesForUser, RequesterPlace } from "@/lib/places-data";
 
 export type { RequesterPlace };
 
@@ -314,14 +311,6 @@ export default function RequesterPlacePage() {
       <header className="border-b border-border bg-card/90 backdrop-blur sticky top-0 z-30 px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/requester"
-              className={buttonVariants({ variant: "ghost", size: "sm" })}
-            >
-              <ArrowLeft className="size-4 mr-1" />
-              <span>Back</span>
-            </Link>
-            <div className="h-4 w-px bg-border hidden sm:block" />
             <div>
               <h1 className="font-heading font-bold text-base sm:text-lg text-foreground flex items-center gap-2">
                 <Store className="size-5 text-primary" />
@@ -334,47 +323,52 @@ export default function RequesterPlacePage() {
             </div>
           </div>
 
-          <Button
-            size="sm"
-            onClick={handleOpenAdd}
-            className="text-xs font-semibold gap-1.5 bg-brand-deep text-white hover:opacity-90 cursor-pointer shadow-xs"
-          >
-            <Plus className="size-4" />
-            <span>Add New Place</span>
-          </Button>
+          <div className="hidden md:block">
+            <Button
+              size="sm"
+              onClick={handleOpenAdd}
+              className="text-xs font-semibold gap-1.5 bg-brand-deep text-white hover:opacity-90 cursor-pointer shadow-xs"
+            >
+              <Plus className="size-4" />
+              <span>Add New Place</span>
+            </Button>
+          </div>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 pt-6 space-y-6">
         {/* ─── Venue Selector Pills ─── */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-border">
-          {places.map((place) => {
-            const isSelected = place.id === activePlace.id;
-            return (
-              <button
-                key={place.id}
-                onClick={() => setActivePlaceId(place.id)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  isSelected
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                <Store className="size-3.5" />
-                <span>{place.name}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+        <ScrollArea>
+          <div className="flex items-center gap-2 pb-1 border-b border-border">
+            {places.map((place) => {
+              const isSelected = place.id === activePlace.id;
+              return (
+                <button
+                  key={place.id}
+                  onClick={() => setActivePlaceId(place.id)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-white/20 text-white"
-                      : "bg-primary/10 text-primary"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "bg-muted/70 text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                 >
-                  {place.stats.youthHelped} youth
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <Store className="size-3.5" />
+                  <span>{place.name}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      isSelected
+                        ? "bg-white/20 text-white"
+                        : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    {place.stats.youthHelped} youth
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <ScrollBar hidden />
+        </ScrollArea>
 
         {/* ─── Place Hero Banner ─── */}
         <div className="bg-card rounded-card border border-border overflow-hidden shadow-card">
@@ -494,8 +488,8 @@ export default function RequesterPlacePage() {
 
         {/* ─── YOUTH IMPACT & VENUE ANALYTICS ─── */}
         <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 mb-5 md:mb-0">
+            <div className="mb-5 md:m">
               <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
                 <TrendingUp className="size-4 text-primary" />
                 <span>Venue Analytics &amp; Youth Impact</span>
