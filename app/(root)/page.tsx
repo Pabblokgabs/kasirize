@@ -30,7 +30,7 @@ export default function Home() {
 
   // Automatic role saving and onboarding routing
   const handleSelectRole = (role: UserRole) => {
-    return router.push("/sign-in");
+    return router.push("/build-profile");
 
     if (role === "role-user") {
       toast.success("Welcome! Starting Youth profile builder.");
