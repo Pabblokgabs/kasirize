@@ -364,125 +364,127 @@ export default function EmployerProfilePage() {
 
       {/* ─── TAB 1: COMPANY INFORMATION ─── */}
       {activeTab === "enterprise" && (
-        <form
-          onSubmit={handleSave}
-          className="space-y-5 bg-card rounded-card border border-border shadow-card p-6"
-        >
-          <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div>
-              <h3 className="font-heading font-bold text-base text-foreground">
-                Enterprise &amp; Brand Details
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Company branding displayed across youth opportunity listings.
-              </p>
+        <>
+          <form
+            onSubmit={handleSave}
+            className="space-y-5 bg-card rounded-card border border-border shadow-card p-6"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div>
+                <h3 className="font-heading font-bold text-base text-foreground">
+                  Enterprise &amp; Brand Details
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Company branding displayed across youth opportunity listings.
+                </p>
+              </div>
+              {saved && (
+                <span className="text-xs text-primary font-medium flex items-center gap-1">
+                  <Check className="size-3.5" /> Company profile saved!
+                </span>
+              )}
             </div>
-            {saved && (
-              <span className="text-xs text-primary font-medium flex items-center gap-1">
-                <Check className="size-3.5" /> Company profile saved!
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="companyName">Enterprise / Brand Name</Label>
+                <Input
+                  id="companyName"
+                  required
+                  value={profile.companyName}
+                  onChange={(e) =>
+                    setProfile({ ...profile, companyName: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="industry">Industry / Sector</Label>
+                <Input
+                  id="industry"
+                  required
+                  value={profile.industry}
+                  onChange={(e) =>
+                    setProfile({ ...profile, industry: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="location">Headquarters / Main Facility</Label>
+                <Input
+                  id="location"
+                  required
+                  value={profile.location}
+                  onChange={(e) =>
+                    setProfile({ ...profile, location: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="website">Careers Portal / Website</Label>
+                <Input
+                  id="website"
+                  value={profile.website}
+                  onChange={(e) =>
+                    setProfile({ ...profile, website: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="contactEmail">Talent Contact Email</Label>
+                <Input
+                  id="contactEmail"
+                  type="email"
+                  required
+                  value={profile.contactEmail}
+                  onChange={(e) =>
+                    setProfile({ ...profile, contactEmail: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="contactPhone">Talent Desk Phone</Label>
+                <Input
+                  id="contactPhone"
+                  value={profile.contactPhone}
+                  onChange={(e) =>
+                    setProfile({ ...profile, contactPhone: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="desc">
+                About the Company &amp; Youth Opportunities
+              </Label>
+              <Textarea
+                id="desc"
+                rows={3}
+                value={profile.description}
+                onChange={(e) =>
+                  setProfile({ ...profile, description: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="pt-3 flex items-center justify-between border-t border-border">
+              <span className="text-xs text-muted-foreground">
+                Saves locally in browser
               </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="companyName">Enterprise / Brand Name</Label>
-              <Input
-                id="companyName"
-                required
-                value={profile.companyName}
-                onChange={(e) =>
-                  setProfile({ ...profile, companyName: e.target.value })
-                }
-              />
+              <Button type="submit" className="font-semibold text-xs">
+                Save Company Profile
+              </Button>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="industry">Industry / Sector</Label>
-              <Input
-                id="industry"
-                required
-                value={profile.industry}
-                onChange={(e) =>
-                  setProfile({ ...profile, industry: e.target.value })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="location">Headquarters / Main Facility</Label>
-              <Input
-                id="location"
-                required
-                value={profile.location}
-                onChange={(e) =>
-                  setProfile({ ...profile, location: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="website">Careers Portal / Website</Label>
-              <Input
-                id="website"
-                value={profile.website}
-                onChange={(e) =>
-                  setProfile({ ...profile, website: e.target.value })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="contactEmail">Talent Contact Email</Label>
-              <Input
-                id="contactEmail"
-                type="email"
-                required
-                value={profile.contactEmail}
-                onChange={(e) =>
-                  setProfile({ ...profile, contactEmail: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contactPhone">Talent Desk Phone</Label>
-              <Input
-                id="contactPhone"
-                value={profile.contactPhone}
-                onChange={(e) =>
-                  setProfile({ ...profile, contactPhone: e.target.value })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="desc">
-              About the Company &amp; Youth Opportunities
-            </Label>
-            <Textarea
-              id="desc"
-              rows={3}
-              value={profile.description}
-              onChange={(e) =>
-                setProfile({ ...profile, description: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="pt-3 flex items-center justify-between border-t border-border">
-            <span className="text-xs text-muted-foreground">
-              Saves locally in browser
-            </span>
-            <Button type="submit" className="font-semibold text-xs">
-              Save Company Profile
-            </Button>
-          </div>
-
+          </form>
           <Button
             variant="destructive"
+            size="lg"
             onClick={() => {
               if (typeof window !== "undefined") {
                 localStorage.removeItem(ROLE_STORAGE_KEY);
@@ -490,12 +492,12 @@ export default function EmployerProfilePage() {
               }
               router.push("/");
             }}
-            className="flex-1 w-full md:hidden flex items-center  justify-center gap-2"
+            className="flex-1 w-full md:hidden flex items-center  justify-center gap-2 mt-5"
           >
             <LogOut className="size-3.5" />
             <span>Log Out</span>
           </Button>
-        </form>
+        </>
       )}
 
       {/* ─── TAB 2: B-BBEE & SETA COMPLIANCE ─── */}
