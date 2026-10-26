@@ -659,7 +659,7 @@ export default function Home() {
         {/* ═══════════════════════════════════════════════════════════════════════
             7. TRUST & PRIVACY FIRST
         ═══════════════════════════════════════════════════════════════════════ */}
-        {/* <section
+        <section
           id="trust"
           className="py-16 md:py-24 bg-muted/60 border-y border-border"
         >
@@ -669,7 +669,8 @@ export default function Home() {
               Trust &amp; Privacy First
             </h2>
             <p className="text-base text-muted-foreground leading-relaxed mb-12 max-w-2xl">
-              We designed Kasirize around strict POPIA principles and dignified privacy protections for young job seekers.
+              We designed Kasirize around strict POPIA principles and dignified
+              privacy protections for young job seekers.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -679,7 +680,8 @@ export default function Home() {
                   You control your info
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Nothing is published without permission. Only requesters and employers you apply to see your profile evidence.
+                  Nothing is published without permission. Only requesters and
+                  employers you apply to see your profile evidence.
                 </p>
               </div>
 
@@ -689,7 +691,8 @@ export default function Home() {
                   No ID numbers asked
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  We never collect national ID numbers. You can build and use your profile completely free from identity risk.
+                  We never collect national ID numbers. You can build and use
+                  your profile completely free from identity risk.
                 </p>
               </div>
 
@@ -699,7 +702,8 @@ export default function Home() {
                   Clear verification tags
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Self-declared skills are always clearly distinguished from task-verified evidence on your profile.
+                  Self-declared skills are always clearly distinguished from
+                  task-verified evidence on your profile.
                 </p>
               </div>
 
@@ -709,12 +713,13 @@ export default function Home() {
                   Start as a guest
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Explore and create a local profile on your phone without needing a password or credit card.
+                  Explore and create a local profile on your phone without
+                  needing a password or credit card.
                 </p>
               </div>
             </div>
           </div>
-        </section> */}
+        </section>
 
         {/* ═══════════════════════════════════════════════════════════════════════
             8. TIMELINE: WHY THIS IS THE FUTURE
