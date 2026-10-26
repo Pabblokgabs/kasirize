@@ -31,6 +31,7 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -82,6 +83,7 @@ const DEFAULT_BANKING: BankingData = {
 };
 
 export default function MentorProfilePage() {
+  const router = useRouter();
   const authUserFromStore = useKasirizeStore((state) => state.authUser);
   const authUser = authUserFromStore || getStoredAuthUser();
   const activeEmail = authUser?.email || "bongani@sowetoartisan.org.za";
