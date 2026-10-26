@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ROLE_STORAGE_KEY } from "@/constants/roles";
 import { useLiveUserData } from "@/hooks/queries";
 import { getStoredAuthUser } from "@/lib/auth";
 import { useKasirizeStore } from "@/store/kasirize-store";
@@ -22,10 +23,12 @@ import {
   CreditCard,
   Crown,
   ExternalLink,
+  LogOut,
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
@@ -62,6 +65,7 @@ const DEFAULT_EMPLOYER_PROFILE: EmployerProfileData = {
 };
 
 export default function EmployerProfilePage() {
+  const router = useRouter();
   const authUserFromStore = useKasirizeStore((state) => state.authUser);
   const authUser = authUserFromStore || getStoredAuthUser();
   const activeEmail = authUser?.email || "themba@innovatelogistics.co.za";
@@ -476,6 +480,21 @@ export default function EmployerProfilePage() {
               Save Company Profile
             </Button>
           </div>
+
+          <Button
+            variant="destructive"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem(ROLE_STORAGE_KEY);
+                localStorage.removeItem("kasirize_auth_user");
+              }
+              router.push("/");
+            }}
+            className="flex-1 w-full md:hidden flex items-center  justify-center gap-2"
+          >
+            <LogOut className="size-3.5" />
+            <span>Log Out</span>
+          </Button>
         </form>
       )}
 
