@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ROLE_STORAGE_KEY } from "@/constants/roles";
 import { useLiveUserData } from "@/hooks/queries";
 import { getStoredAuthUser } from "@/lib/auth";
 import { useKasirizeStore } from "@/store/kasirize-store";
@@ -22,6 +23,7 @@ import {
   Coins,
   CreditCard,
   ExternalLink,
+  LogOut,
   Percent,
   Plus,
   ShieldAlert,
@@ -384,139 +386,162 @@ export default function MentorProfilePage() {
 
       {/* ─── TAB 1: ARTISAN CREDENTIALS ─── */}
       {activeTab === "credentials" && (
-        <form
-          onSubmit={handleSave}
-          className="space-y-5 bg-card rounded-card border border-border shadow-card p-6"
-        >
-          <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div>
-              <h3 className="font-heading font-bold text-base text-foreground">
-                Artisan Profile &amp; Verification
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Your credentials give youth credible, employer-accepted skill
-                verifications.
-              </p>
+        <>
+          <form
+            onSubmit={handleSave}
+            className="space-y-5 bg-card rounded-card border border-border shadow-card p-6"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div>
+                <h3 className="font-heading font-bold text-base text-foreground">
+                  Artisan Profile &amp; Verification
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Your credentials give youth credible, employer-accepted skill
+                  verifications.
+                </p>
+              </div>
+              {saved && (
+                <span className="text-xs text-primary font-medium flex items-center gap-1">
+                  <Check className="size-3.5" /> Profile saved!
+                </span>
+              )}
             </div>
-            {saved && (
-              <span className="text-xs text-primary font-medium flex items-center gap-1">
-                <Check className="size-3.5" /> Profile saved!
-              </span>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="fullName">Full Name &amp; Honorific</Label>
-              <Input
-                id="fullName"
-                required
-                value={profile.fullName}
-                onChange={(e) =>
-                  setProfile({ ...profile, fullName: e.target.value })
-                }
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="fullName">Full Name &amp; Honorific</Label>
+                <Input
+                  id="fullName"
+                  required
+                  value={profile.fullName}
+                  onChange={(e) =>
+                    setProfile({ ...profile, fullName: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="roleTitle">Professional Title</Label>
+                <Input
+                  id="roleTitle"
+                  required
+                  value={profile.roleTitle}
+                  onChange={(e) =>
+                    setProfile({ ...profile, roleTitle: e.target.value })
+                  }
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="roleTitle">Professional Title</Label>
-              <Input
-                id="roleTitle"
-                required
-                value={profile.roleTitle}
-                onChange={(e) =>
-                  setProfile({ ...profile, roleTitle: e.target.value })
-                }
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="org">Guild / Association / Employer</Label>
-              <Input
-                id="org"
-                required
-                value={profile.organization}
-                onChange={(e) =>
-                  setProfile({ ...profile, organization: e.target.value })
-                }
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="org">Guild / Association / Employer</Label>
+                <Input
+                  id="org"
+                  required
+                  value={profile.organization}
+                  onChange={(e) =>
+                    setProfile({ ...profile, organization: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="accreditation">
+                  Accreditation / Trade Certificate
+                </Label>
+                <Input
+                  id="accreditation"
+                  value={profile.accreditationBody}
+                  onChange={(e) =>
+                    setProfile({
+                      ...profile,
+                      accreditationBody: e.target.value,
+                    })
+                  }
+                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="location">Base Location</Label>
+                <Input
+                  id="location"
+                  required
+                  value={profile.location}
+                  onChange={(e) =>
+                    setProfile({ ...profile, location: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="experience">Years of Trade Practice</Label>
+                <Input
+                  id="experience"
+                  type="number"
+                  min="1"
+                  value={profile.yearsExperience}
+                  onChange={(e) =>
+                    setProfile({
+                      ...profile,
+                      yearsExperience: Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+            </div>
+
             <div className="space-y-1.5">
-              <Label htmlFor="accreditation">
-                Accreditation / Trade Certificate
+              <Label htmlFor="specialties">
+                Specialties &amp; Skill Tracks (comma separated)
               </Label>
               <Input
-                id="accreditation"
-                value={profile.accreditationBody}
+                id="specialties"
+                value={profile.specialties}
                 onChange={(e) =>
-                  setProfile({ ...profile, accreditationBody: e.target.value })
+                  setProfile({ ...profile, specialties: e.target.value })
                 }
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="location">Base Location</Label>
-              <Input
-                id="location"
-                required
-                value={profile.location}
+              <Label htmlFor="bio">Mentor Bio &amp; Philosophy</Label>
+              <Textarea
+                id="bio"
+                rows={3}
+                value={profile.bio}
                 onChange={(e) =>
-                  setProfile({ ...profile, location: e.target.value })
+                  setProfile({ ...profile, bio: e.target.value })
                 }
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="experience">Years of Trade Practice</Label>
-              <Input
-                id="experience"
-                type="number"
-                min="1"
-                value={profile.yearsExperience}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    yearsExperience: Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="specialties">
-              Specialties &amp; Skill Tracks (comma separated)
-            </Label>
-            <Input
-              id="specialties"
-              value={profile.specialties}
-              onChange={(e) =>
-                setProfile({ ...profile, specialties: e.target.value })
+            <div className="pt-3 flex items-center justify-between border-t border-border">
+              <span className="text-xs text-muted-foreground">
+                Stored locally on this device
+              </span>
+              <Button type="submit" className="font-semibold text-xs">
+                Save Mentor Profile
+              </Button>
+            </div>
+          </form>
+
+          <Button
+            variant="destructive"
+            size="lg"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem(ROLE_STORAGE_KEY);
+                localStorage.removeItem("kasirize_auth_user");
               }
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="bio">Mentor Bio &amp; Philosophy</Label>
-            <Textarea
-              id="bio"
-              rows={3}
-              value={profile.bio}
-              onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-            />
-          </div>
-
-          <div className="pt-3 flex items-center justify-between border-t border-border">
-            <span className="text-xs text-muted-foreground">
-              Stored locally on this device
-            </span>
-            <Button type="submit" className="font-semibold text-xs">
-              Save Mentor Profile
-            </Button>
-          </div>
-        </form>
+              router.push("/");
+            }}
+            className="flex-1 w-full md:hidden flex items-center  justify-center gap-2 mt-5"
+          >
+            <LogOut className="size-3.5" />
+            <span>Log Out</span>
+          </Button>
+        </>
       )}
 
       {/* ─── TAB 2: RATES & REVENUE ─── */}
