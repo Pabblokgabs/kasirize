@@ -1,6 +1,6 @@
 "use client";
 
-import SkeletonTemplate from "@/components/skeleton-template/page";
+import { Skeleton } from "@/components/ui/skeleton";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -342,34 +342,32 @@ export default function YouthTasksDashboard() {
 
         {/* ─── TASKS GRID ─── */}
         {isLoading ? (
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-3 w-2/3" />
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-16 w-full" />
-            </div>
-
-            <div className="space-y-2">
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-3 w-2/3" />
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-16 w-full" />
-            </div>
-
-            <div className="space-y-2">
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-3 w-2/3" />
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-16 w-full" />
-            </div>
-
-            <div className="space-y-2">
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-3 w-2/3" />
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-16 w-full" />
-            </div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="p-5 rounded-card bg-card border border-border shadow-card space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-28 rounded-full" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                  <Skeleton className="h-6 w-16" />
+                </div>
+                <Skeleton className="h-5 w-3/4" />
+                <div className="flex gap-3">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <Skeleton className="h-16 w-full rounded-lg" />
+                <div className="flex justify-between pt-2 border-t border-border">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-8 w-32 rounded-btn" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredTasks.length === 0 ? (
           <div className="p-8 text-center rounded-card bg-card border border-border space-y-3">

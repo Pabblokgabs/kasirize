@@ -1,5 +1,6 @@
 "use client";
 
+import { CreateAccountModal } from "@/components/shared/create-account-modal";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { checkActionPermission, getStoredAuthUser } from "@/lib/auth";
 import { inspectChatMessage } from "@/services/scam-interceptor";
 import {
   AlertTriangle,
@@ -187,6 +189,7 @@ export default function YouthChatDashboard() {
 
   // Block modal state
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const filteredChats = chats.filter((c) => {
     const q = searchQuery.toLowerCase();
@@ -243,6 +246,13 @@ export default function YouthChatDashboard() {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageInput.trim() || !activeChat) return;
+
+    const user = getStoredAuthUser();
+    const perm = checkActionPermission(user, "chat");
+    if (!perm.allowed) {
+      setShowAuthModal(true);
+      return;
+    }
 
     if (activeChat.blocked || activeChat.securityViolationDetected) {
       toast.error(
@@ -761,6 +771,12 @@ export default function YouthChatDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CreateAccountModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        actionName="Send Chat Messages"
+      />
     </div>
   );
 }

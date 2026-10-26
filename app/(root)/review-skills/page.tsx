@@ -3,12 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { saveStoredAuthUser } from "@/lib/auth";
+import { clearProfileDraft, getProfileDraft } from "@/lib/draft-store";
 import {
   calculateConfidenceScore,
-  getStoredProfile,
   saveStoredProfile,
 } from "@/lib/store";
-import { ProfileSkill } from "@/types";
+import { useKasirizeStore } from "@/store/kasirize-store";
+import { ProfileSkill, YouthProfile } from "@/types";
 import {
   ArrowRight,
   Check,
@@ -22,7 +25,6 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { toast } from "react-hot-toast";
 
 function getLocalFallbackSkills(story: string): ProfileSkill[] {
   const lower = story.toLowerCase();
@@ -98,13 +100,14 @@ function getLocalFallbackSkills(story: string): ProfileSkill[] {
   if (
     lower.includes("sound") ||
     lower.includes("church") ||
-    lower.includes("mic") ||
-    lower.includes("audio")
+    lower.includes("music") ||
+    lower.includes("event") ||
+    lower.includes("mic")
   ) {
     suggestions.push({
-      id: "ps-sug-6",
-      skillId: "sk-6",
-      skillName: "Community Event Audio & Equipment Setup",
+      id: "ps-sug-5",
+      skillId: "sk-5",
+      skillName: "Live Event Audio & PA Setup",
       status: "self_declared",
       confidence: 65,
       userApproved: true,
@@ -114,17 +117,17 @@ function getLocalFallbackSkills(story: string): ProfileSkill[] {
   if (suggestions.length === 0) {
     suggestions.push(
       {
-        id: "ps-sug-1",
-        skillId: "sk-1",
-        skillName: "Stock Counting & Inventory Auditing",
+        id: "ps-sug-def1",
+        skillId: "sk-def1",
+        skillName: "Customer Service & Community Communication",
         status: "self_declared",
         confidence: 60,
         userApproved: true,
       },
       {
-        id: "ps-sug-5",
-        skillId: "sk-5",
-        skillName: "Customer Service & Conflict Resolution",
+        id: "ps-sug-def2",
+        skillId: "sk-def2",
+        skillName: "Task Execution & Time Management",
         status: "self_declared",
         confidence: 60,
         userApproved: true,
@@ -137,42 +140,38 @@ function getLocalFallbackSkills(story: string): ProfileSkill[] {
 
 export default function ReviewSkillsPage() {
   const router = useRouter();
-  const [profile, setProfile] = useState(() => getStoredProfile());
+  const [draft, setDraft] = useState(() => getProfileDraft());
+
   const [skills, setSkills] = useState<ProfileSkill[]>(() => {
-    if (profile.skills && profile.skills.length > 0) {
-      return profile.skills;
-    }
-    return getLocalFallbackSkills(profile.experienceStory || "");
+    return getLocalFallbackSkills(draft.experienceStory || "");
   });
 
-  const [aiSource, setAiSource] = useState<string>(() => {
-    if (!profile.experienceStory || profile.experienceStory.length < 10) {
-      return "Standard taxonomy applied";
-    }
-    return "Analyzing experience...";
-  });
-  const [isAiLoading, setIsAiLoading] = useState<boolean>(() => {
-    return Boolean(
-      profile.experienceStory && profile.experienceStory.length >= 10,
-    );
-  });
+  const [aiSource, setAiSource] = useState<string>("Analyzing experience...");
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [customSkillName, setCustomSkillName] = useState("");
   const [showAddCustom, setShowAddCustom] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Live extract via /api/ai/extract-skills if story is present
   useEffect(() => {
-    if (!profile.experienceStory || profile.experienceStory.length < 10) {
+    const currentDraft = getProfileDraft();
+    setDraft(currentDraft);
+
+    if (!currentDraft.experienceStory || currentDraft.experienceStory.length < 10) {
+      setIsAiLoading(false);
+      setAiSource("Standard taxonomy applied");
       return;
     }
 
     let isMounted = true;
+    setIsAiLoading(true);
 
     fetch("/api/ai/extract-skills", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ story: profile.experienceStory }),
+      body: JSON.stringify({ story: currentDraft.experienceStory }),
     })
       .then((res) => res.json())
       .then((json) => {
@@ -197,10 +196,13 @@ export default function ReviewSkillsPage() {
               ? "Extracted with Gemini AI reasoning"
               : "Extracted via Kasirize skills taxonomy",
           );
+        } else {
+          setAiSource("Standard taxonomy applied");
         }
       })
       .catch((err) => {
         console.warn("API extraction error:", err);
+        setAiSource("Standard taxonomy applied");
       })
       .finally(() => {
         if (isMounted) setIsAiLoading(false);
@@ -209,7 +211,7 @@ export default function ReviewSkillsPage() {
     return () => {
       isMounted = false;
     };
-  }, [profile.experienceStory]);
+  }, []);
 
   const handleToggleApprove = (id: string) => {
     setSkills((prev) =>
@@ -217,11 +219,11 @@ export default function ReviewSkillsPage() {
         s.id === id ? { ...s, userApproved: !s.userApproved } : s,
       ),
     );
+    if (errorMessage) setErrorMessage("");
   };
 
   const handleRemoveSkill = (id: string) => {
     setSkills((prev) => prev.filter((s) => s.id !== id));
-    toast.success("Skill removed");
   };
 
   const startEdit = (skill: ProfileSkill) => {
@@ -235,7 +237,6 @@ export default function ReviewSkillsPage() {
       prev.map((s) => (s.id === id ? { ...s, skillName: editName.trim() } : s)),
     );
     setEditingId(null);
-    toast.success("Skill updated");
   };
 
   const handleAddCustom = (e: React.FormEvent) => {
@@ -247,35 +248,69 @@ export default function ReviewSkillsPage() {
       skillId: `sk-custom-${Date.now()}`,
       skillName: customSkillName.trim(),
       status: "self_declared",
-      confidence: 50,
+      confidence: 55,
       userApproved: true,
     };
 
     setSkills((prev) => [...prev, newSkill]);
     setCustomSkillName("");
     setShowAddCustom(false);
-    toast.success("Custom skill added!");
+    if (errorMessage) setErrorMessage("");
   };
 
   const handleConfirmAndSave = () => {
     const approvedSkills = skills.filter((s) => s.userApproved);
     if (approvedSkills.length === 0) {
-      toast.error("Please approve at least one skill to continue.");
+      setErrorMessage("Please approve at least one skill before launching your profile.");
       return;
     }
 
-    const updatedProfile = {
-      ...profile,
+    const currentDraft = getProfileDraft();
+    const guestId = `usr_guest_${Date.now()}`;
+    const displayName = currentDraft.fullName || "Guest Seeker";
+    const userLocation = currentDraft.location || "Soweto";
+    const userProvince = currentDraft.province || "Gauteng";
+
+    const userEmail = currentDraft.email?.trim() || `guest_${Date.now()}@kasirize.local`;
+
+    const baseProfile: YouthProfile = {
+      id: guestId,
+      fullName: displayName,
+      email: userEmail,
+      location: userLocation,
+      province: userProvince,
+      experienceStory: currentDraft.experienceStory || "",
+      overallConfidenceScore: 60,
+      mockWalletCents: 0,
+      completedTasksCount: 0,
+      savedOpportunities: [],
+      transportStipendEligible: true,
+      createdAt: new Date().toISOString(),
       skills: approvedSkills,
-      overallConfidenceScore: calculateConfidenceScore({
-        ...profile,
-        skills: approvedSkills,
-      }),
     };
 
-    saveStoredProfile(updatedProfile);
-    setProfile(updatedProfile);
-    toast.success("Profile saved with your confirmed skills!");
+    baseProfile.overallConfidenceScore = calculateConfidenceScore(baseProfile);
+
+    // Save locally as guest profile
+    saveStoredProfile(baseProfile);
+
+    // Save as guest auth user in localStorage and Zustand store
+    const authGuestUser = {
+      id: guestId,
+      name: displayName,
+      email: userEmail,
+      role: "role-user" as const,
+      isGuest: true,
+      location: `${userLocation}, ${userProvince}`,
+    };
+
+    saveStoredAuthUser(authGuestUser);
+    useKasirizeStore.getState().setAuthUser(authGuestUser);
+
+    // Clear draft session storage
+    clearProfileDraft();
+
+    // Navigate to dashboard
     router.push("/dashboard/user");
   };
 
@@ -306,7 +341,7 @@ export default function ReviewSkillsPage() {
             {isAiLoading ? (
               <>
                 <Loader2 className="size-3.5 text-primary animate-spin" />
-                <span>Extracting practical competencies...</span>
+                <span>Extracting practical competencies with AI...</span>
               </>
             ) : (
               <>
@@ -319,133 +354,165 @@ export default function ReviewSkillsPage() {
             Confirm Your Practical Skills
           </h1>
           <p className="text-sm text-muted-foreground">
-            We translated your experience story into structured, credible
-            competencies. You have full control: approve, edit names, remove
-            what does not fit, or add custom skills.
+            We translated your experience story into structured competencies. You have full control: approve, edit names, remove what does not fit, or add custom skills.
           </p>
         </div>
 
-        {/* ─── SKILLS LIST ─── */}
-        <div className="space-y-3 mb-6">
-          {skills.map((skill) => {
-            const isEditing = editingId === skill.id;
+        {errorMessage && (
+          <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
+            {errorMessage}
+          </div>
+        )}
 
-            return (
-              <div
-                key={skill.id}
-                className={`p-4 rounded-xl border transition-all ${
-                  skill.userApproved
-                    ? "bg-card border-border shadow-xs"
-                    : "bg-muted/40 border-border/50 opacity-60"
-                }`}
-              >
-                {isEditing ? (
-                  <div className="space-y-3">
-                    <div>
-                      <Label
-                        htmlFor={`edit-${skill.id}`}
-                        className="text-xs font-medium mb-1.5"
-                      >
-                        Edit Skill Name
-                      </Label>
-                      <Input
-                        id={`edit-${skill.id}`}
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="w-full"
-                        autoFocus
-                      />
-                    </div>
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingId(null)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => saveEdit(skill.id)}
-                      >
-                        Save
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleApprove(skill.id)}
-                        className={`size-6 rounded-md flex items-center justify-center shrink-0 border transition-colors ${
-                          skill.userApproved
-                            ? "bg-primary border-primary text-white"
-                            : "bg-background border-border text-transparent hover:border-primary"
-                        }`}
-                        title={
-                          skill.userApproved
-                            ? "Click to reject"
-                            : "Click to approve"
-                        }
-                      >
-                        <Check className="size-4 stroke-3" />
-                      </button>
+        {/* ─── AI LOADING STATE OR SKILLS LIST ─── */}
+        {isAiLoading ? (
+          <div className="space-y-3 mb-6">
+            <div className="p-4 rounded-xl border border-border bg-card space-y-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-6 rounded-md" />
+                <div className="space-y-1.5 flex-1">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border border-border bg-card space-y-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-6 rounded-md" />
+                <div className="space-y-1.5 flex-1">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border border-border bg-card space-y-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="size-6 rounded-md" />
+                <div className="space-y-1.5 flex-1">
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-3 w-2/5" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3 mb-6">
+            {skills.map((skill) => {
+              const isEditing = editingId === skill.id;
 
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span
-                            className={`font-medium text-sm truncate ${
-                              skill.userApproved
-                                ? "text-foreground"
-                                : "text-muted-foreground line-through"
-                            }`}
-                          >
-                            {skill.skillName}
-                          </span>
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-                            {skill.status === "task_verified" ||
-                            skill.status === "referee_confirmed"
-                              ? "Verified"
-                              : "Self-Declared"}
-                          </span>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          Base confidence: {skill.confidence}% • Proved by
-                          experience story
-                        </div>
+              return (
+                <div
+                  key={skill.id}
+                  className={`p-4 rounded-xl border transition-all ${
+                    skill.userApproved
+                      ? "bg-card border-border shadow-xs"
+                      : "bg-muted/40 border-border/50 opacity-60"
+                  }`}
+                >
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div>
+                        <Label
+                          htmlFor={`edit-${skill.id}`}
+                          className="text-xs font-medium mb-1.5"
+                        >
+                          Edit Skill Name
+                        </Label>
+                        <Input
+                          id={`edit-${skill.id}`}
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="w-full"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingId(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => saveEdit(skill.id)}
+                        >
+                          Save
+                        </Button>
                       </div>
                     </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleApprove(skill.id)}
+                          className={`size-6 rounded-md flex items-center justify-center shrink-0 border transition-colors ${
+                            skill.userApproved
+                              ? "bg-primary border-primary text-white"
+                              : "bg-background border-border text-transparent hover:border-primary"
+                          }`}
+                          title={
+                            skill.userApproved
+                              ? "Click to reject"
+                              : "Click to approve"
+                          }
+                        >
+                          <Check className="size-4 stroke-3" />
+                        </button>
 
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => startEdit(skill)}
-                        title="Edit name"
-                      >
-                        <Edit2 className="size-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => handleRemoveSkill(skill.id)}
-                        title="Delete skill"
-                      >
-                        <X className="size-4" />
-                      </Button>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={`font-medium text-sm truncate ${
+                                skill.userApproved
+                                  ? "text-foreground"
+                                  : "text-muted-foreground line-through"
+                              }`}
+                            >
+                              {skill.skillName}
+                            </span>
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+                              Self-Declared
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Base confidence: {skill.confidence}% • Proved by experience story
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => startEdit(skill)}
+                          title="Edit name"
+                        >
+                          <Edit2 className="size-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleRemoveSkill(skill.id)}
+                          title="Delete skill"
+                        >
+                          <X className="size-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* ─── ADD CUSTOM SKILL ─── */}
         {showAddCustom ? (
@@ -493,6 +560,7 @@ export default function ReviewSkillsPage() {
             variant="outline"
             className="w-full mb-6 border-dashed"
             onClick={() => setShowAddCustom(true)}
+            disabled={isAiLoading}
           >
             <Plus className="size-4 mr-1.5" />
             Add Another Skill
@@ -504,15 +572,10 @@ export default function ReviewSkillsPage() {
           <ShieldCheck className="size-5 text-primary shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
             <span className="font-semibold text-foreground block">
-              Transparent Integrity Guarantee
+              Guest Profile Mode
             </span>
             <p className="text-muted-foreground">
-              These skills start tagged as{" "}
-              <strong className="text-foreground">Self-Declared</strong>. As you
-              complete nearby tasks or add referees, Kasirize automatically
-              elevates them to{" "}
-              <strong className="text-foreground">Verified</strong> with
-              permanent tamper-proof proof.
+              Your profile is saved locally as a guest. You will be able to browse verified tasks and opportunities. To apply or chat, you can create an account at any time with one click.
             </p>
           </div>
         </div>
@@ -531,6 +594,7 @@ export default function ReviewSkillsPage() {
               variant="outline"
               className="flex-1 sm:flex-initial"
               onClick={() => router.push("/experience-story")}
+              disabled={isAiLoading}
             >
               Back
             </Button>
@@ -538,7 +602,7 @@ export default function ReviewSkillsPage() {
               type="button"
               className="flex-1 sm:flex-initial font-semibold"
               onClick={handleConfirmAndSave}
-              disabled={approvedCount === 0}
+              disabled={isAiLoading || approvedCount === 0}
             >
               <span>Save & Launch My Profile</span>
               <ArrowRight className="size-4 ml-1.5" />

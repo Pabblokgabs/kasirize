@@ -4,6 +4,7 @@ import {
   employerProfiles,
   employerWorkplaces,
   opportunities,
+  skills,
   tasks,
   users,
   youthProfiles,
@@ -35,7 +36,37 @@ export async function GET(req: NextRequest) {
     }
 
     if (!matchedUser) {
-      return NextResponse.json({ success: false, error: "User not found in database" }, { status: 404 });
+      // If user is a guest or not yet registered in database, still return open tasks & opportunities!
+      const availableTasks = await db.select().from(tasks).where(eq(tasks.status, "open"));
+      const availableOpps = await db.select().from(opportunities).limit(10);
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: userId || "usr_guest",
+          name: "Guest Explorer",
+          email: email || "guest@kasirize.local",
+          role: "youth",
+          isGuest: true,
+          location: "Soweto, Gauteng",
+          confidenceScore: 65,
+        },
+        profile: {
+          headline: "Guest Profile",
+          experienceStory: "",
+          transportEligible: true,
+          tasksCompletedCount: 0,
+          reliabilityRate: 100,
+          onTimeRate: 100,
+        },
+        skills: [],
+        tasks: {
+          assigned: [],
+          available: availableTasks,
+        },
+        applications: [],
+        opportunities: availableOpps,
+      });
     }
 
     // 2. Load Role-Specific Live Data
@@ -44,8 +75,31 @@ export async function GET(req: NextRequest) {
       const youthProf = await db.select().from(youthProfiles).where(eq(youthProfiles.userId, matchedUser.id));
       const profile = youthProf[0] || null;
 
-      // Youth Skills
-      const skills = await db.select().from(youthSkills).where(eq(youthSkills.userId, matchedUser.id));
+      // Youth Skills with joined skill names from master skills catalogue
+      const rawSkills = await db
+        .select({
+          id: youthSkills.id,
+          skillId: youthSkills.skillId,
+          skillName: skills.name,
+          category: youthSkills.category,
+          isVerified: youthSkills.isVerified,
+          verifiedBy: youthSkills.verifiedBy,
+          confidence: youthSkills.confidence,
+          proficiency: youthSkills.proficiency,
+        })
+        .from(youthSkills)
+        .leftJoin(skills, eq(youthSkills.skillId, skills.id))
+        .where(eq(youthSkills.userId, matchedUser.id));
+
+      const youthSkillsList = rawSkills.map((s) => ({
+        id: s.id,
+        skillId: s.skillId,
+        skillName: s.skillName || s.skillId.replace(/^(sk_|skill_)/, "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        verified: Boolean(s.isVerified),
+        confidenceScore: s.confidence || 80,
+        category: s.category || "General",
+        proficiency: s.proficiency || "Intermediate",
+      }));
 
       // Tasks assigned to this youth
       const myTasks = await db.select().from(tasks).where(eq(tasks.assignedYouthId, matchedUser.id));
@@ -82,7 +136,7 @@ export async function GET(req: NextRequest) {
         success: true,
         user: matchedUser,
         profile,
-        skills,
+        skills: youthSkillsList,
         tasks: {
           assigned: myTasks,
           available: availableTasks,

@@ -1,5 +1,6 @@
 "use client";
 
+import { CreateAccountModal } from "@/components/shared/create-account-modal";
 import { Button } from "@/components/ui/button";
 import { checkActionPermission, getStoredAuthUser } from "@/lib/auth";
 import { getStoredProfile } from "@/lib/store";
@@ -49,6 +50,7 @@ export default function OpportunityDetailPage({
     return [];
   });
   const [isApplying, setIsApplying] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
     fetch(`/api/opportunities/${id}`)
@@ -129,7 +131,7 @@ export default function OpportunityDetailPage({
     const user = getStoredAuthUser();
     const perm = checkActionPermission(user, "apply");
     if (!perm.allowed) {
-      toast.error(perm.reason || "Guest accounts cannot apply. Please sign in with a verified profile.");
+      setShowAuthModal(true);
       return;
     }
     setIsApplying(true);
@@ -467,6 +469,15 @@ export default function OpportunityDetailPage({
           </div>
         </div>
       </main>
+
+      <CreateAccountModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        actionName="Apply for this Opportunity"
+        onSuccess={() => {
+          handleApply();
+        }}
+      />
     </div>
   );
 }

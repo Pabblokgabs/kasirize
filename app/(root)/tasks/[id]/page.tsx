@@ -1,5 +1,6 @@
 "use client";
 
+import { CreateAccountModal } from "@/components/shared/create-account-modal";
 import { Button } from "@/components/ui/button";
 import { checkActionPermission, getStoredAuthUser } from "@/lib/auth";
 import { taskToSlug } from "@/lib/slugs";
@@ -51,6 +52,7 @@ export default function PublicTaskDetailPage({
   const [isApplying, setIsApplying] = useState(false);
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Decode the URL param (handles encoded slugs like %26 for &)
   const decodedParam = decodeURIComponent(id);
@@ -142,10 +144,7 @@ export default function PublicTaskDetailPage({
     const user = getStoredAuthUser();
     const perm = checkActionPermission(user, "apply");
     if (!perm.allowed) {
-      toast.error(
-        perm.reason ||
-          "Guest accounts cannot take tasks. Please sign in with a verified profile.",
-      );
+      setShowAuthModal(true);
       return;
     }
     setIsApplying(true);
@@ -633,6 +632,15 @@ export default function PublicTaskDetailPage({
           </div>
         </div>
       </main>
+
+      <CreateAccountModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        actionName="Apply for this Task"
+        onSuccess={() => {
+          handleApply();
+        }}
+      />
     </div>
   );
 }

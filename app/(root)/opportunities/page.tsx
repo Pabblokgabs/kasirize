@@ -1,5 +1,6 @@
 "use client";
 
+import { CreateAccountModal } from "@/components/shared/create-account-modal";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { checkActionPermission, getStoredAuthUser } from "@/lib/auth";
@@ -15,6 +16,8 @@ export default function OpportunitiesIndexPage() {
   const [search, setSearch] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [appliedIds, setAppliedIds] = useState<string[]>([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [selectedOppForApply, setSelectedOppForApply] = useState<Opportunity | null>(null);
 
   useEffect(() => {
     fetch("/api/opportunities")
@@ -68,7 +71,8 @@ export default function OpportunitiesIndexPage() {
     const user = getStoredAuthUser();
     const perm = checkActionPermission(user, "apply");
     if (!perm.allowed) {
-      toast.error(perm.reason || "Guest accounts cannot apply. Please sign in with a verified profile.");
+      setSelectedOppForApply(opp);
+      setShowAuthModal(true);
       return;
     }
 
@@ -273,6 +277,17 @@ export default function OpportunitiesIndexPage() {
           )}
         </div>
       </main>
+
+      <CreateAccountModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        actionName="Apply for Opportunity"
+        onSuccess={() => {
+          if (selectedOppForApply) {
+            handleApply(selectedOppForApply);
+          }
+        }}
+      />
     </div>
   );
 }

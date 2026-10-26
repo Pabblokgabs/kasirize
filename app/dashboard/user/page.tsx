@@ -1,9 +1,11 @@
 "use client";
 
-import SkeletonTemplate from "@/components/skeleton-template/page";
+import { CreateAccountModal } from "@/components/shared/create-account-modal";
 import { buttonVariants } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useLiveUserData } from "@/hooks/queries";
 import { taskToSlug } from "@/lib/slugs";
+import { getStoredProfile } from "@/lib/store";
 import { getCurrentUserData } from "@/lib/user-data";
 import { useKasirizeStore } from "@/store/kasirize-store";
 import { Opportunity, Task, YouthProfile } from "@/types";
@@ -14,6 +16,7 @@ import {
   ChevronUp,
   Clock,
   Eye,
+  Lock,
   MapPin,
   Plus,
   Shield,
@@ -34,9 +37,29 @@ export default function YouthDashboardPage() {
   const [expandedBreakdownTaskId, setExpandedBreakdownTaskId] = useState<
     string | null
   >(null);
+  const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
+
+  const isGuestUser = Boolean(
+    authUser?.isGuest ||
+    (!liveData?.profile && authUser?.id?.startsWith("usr_guest_"))
+  );
 
   // Derive profile cleanly from query result or fallback
   const profile: YouthProfile = useMemo(() => {
+    // Only users who went through the guest onboarding flow without a live DB account are guests
+    const isGuest = Boolean(
+      authUser?.isGuest ||
+      (liveData?.user && liveData.user.isGuest) ||
+      (!liveData?.profile && authUser?.id?.startsWith("usr_guest_"))
+    );
+
+    // If genuinely a guest user with a locally stored draft
+    if (isGuest) {
+      const stored = getStoredProfile();
+      if (stored) return stored;
+    }
+
+    // For real logged-in users with live Neon DB data
     if (liveData?.profile) {
       return {
         id: liveData.profile.userId || liveData.user?.id || "usr_youth_01",
@@ -101,7 +124,7 @@ export default function YouthDashboardPage() {
         skills: [],
       }
     );
-  }, [liveData, activeEmail, currentData]);
+  }, [liveData, activeEmail, currentData, authUser?.isGuest, authUser?.id]);
   console.log(profile);
 
   // Derive tasks cleanly from query result
@@ -201,7 +224,7 @@ export default function YouthDashboardPage() {
     const userSkillNames = (profile?.skills ?? [])
       .map((s) => s.skillName?.trim().toLowerCase())
       .filter((name): name is string => Boolean(name));
-      
+
     const verifiedOrExisting: string[] = [];
     const newToEarn: string[] = [];
 
@@ -262,6 +285,36 @@ export default function YouthDashboardPage() {
       </header>
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-6 space-y-6">
+        {/* ─── GUEST BANNER (Only if user has no live account and is in guest mode) ─── */}
+        {isGuestUser && (
+          <div className="p-4 rounded-card bg-primary/10 border-2 border-primary/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-primary/20 text-primary shrink-0 mt-0.5">
+                <Lock className="size-5" />
+              </div>
+              <div className="space-y-0.5">
+                <span className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                  <span>Guest Mode Profile Active</span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary text-white">
+                    Limited Access
+                  </span>
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  Your profile and skills are saved locally. To apply for tasks,
+                  unlock transport funding, or chat with businesses, create a
+                  permanent account.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCreateAccountModal(true)}
+              className="w-full sm:w-auto px-4 py-2 rounded-btn bg-brand-deep text-white hover:opacity-90 font-semibold text-xs shrink-0 cursor-pointer transition-opacity"
+            >
+              Create Account
+            </button>
+          </div>
+        )}
         {/* ─── CREDIBILITY & INCOME HERO CARD ─── */}
         <section className="p-5 sm:p-6 rounded-card bg-linear-to-br from-brand-deep to-primary-900 text-white shadow-lift relative overflow-hidden">
           <div className="relative z-10 grid grid-cols-1 sm:grid-cols-[1.4fr_1fr] gap-6 items-center">
@@ -431,11 +484,32 @@ export default function YouthDashboardPage() {
           </div>
 
           {isLoading ? (
-            <div className="space-y-2">
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-3 w-2/3" />
-              <SkeletonTemplate className="h-3 w-1/3" />
-              <SkeletonTemplate className="h-28 w-full" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="p-5 rounded-card bg-card border border-border shadow-card space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-2">
+                      <Skeleton className="h-5 w-28 rounded-full" />
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </div>
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                  <Skeleton className="h-5 w-3/4" />
+                  <div className="flex gap-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <Skeleton className="h-16 w-full rounded-lg" />
+                  <div className="flex justify-between pt-2 border-t border-border">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-8 w-32 rounded-btn" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="space-y-3.5">
@@ -655,54 +729,82 @@ export default function YouthDashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {opportunities.map((opp) => (
-              <div
-                key={opp.id}
-                className="p-4 rounded-card bg-card border border-border shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-primary/40 transition-colors"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                      {opp.type.replace("_", " ")}
-                    </span>
-                    <span className="text-xs font-semibold text-primary">
-                      {opp.monthlyStipendCents
-                        ? `R ${(opp.monthlyStipendCents / 100).toLocaleString()} / month`
-                        : "Market competitive"}
-                    </span>
-                  </div>
-                  <h4 className="font-heading font-bold text-sm text-foreground">
-                    {opp.title}
-                  </h4>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {opp.employerName}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="size-3 text-primary" />
-                      {opp.location}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Link
-                    href={`/opportunities/${opp.id}`}
-                    className={buttonVariants({
-                      variant: "outline",
-                      size: "sm",
-                      className: "flex-1 sm:flex-initial text-xs font-semibold",
-                    })}
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="p-4 rounded-card bg-card border border-border shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                   >
-                    View Details &amp; Apply
-                  </Link>
-                </div>
+                    <div className="space-y-2 flex-1">
+                      <div className="flex gap-2">
+                        <Skeleton className="h-4 w-24 rounded-full" />
+                        <Skeleton className="h-4 w-28" />
+                      </div>
+                      <Skeleton className="h-5 w-1/2" />
+                      <Skeleton className="h-4 w-1/3" />
+                    </div>
+                    <Skeleton className="h-8 w-36 rounded-btn" />
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              opportunities.map((opp) => (
+                <div
+                  key={opp.id}
+                  className="p-4 rounded-card bg-card border border-border shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:border-primary/40 transition-colors"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+                        {opp.type.replace("_", " ")}
+                      </span>
+                      <span className="text-xs font-semibold text-primary">
+                        {opp.monthlyStipendCents
+                          ? `R ${(opp.monthlyStipendCents / 100).toLocaleString()} / month`
+                          : "Market competitive"}
+                      </span>
+                    </div>
+                    <h4 className="font-heading font-bold text-sm text-foreground">
+                      {opp.title}
+                    </h4>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {opp.employerName}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="size-3 text-primary" />
+                        {opp.location}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Link
+                      href={`/opportunities/${opp.id}`}
+                      className={buttonVariants({
+                        variant: "outline",
+                        size: "sm",
+                        className:
+                          "flex-1 sm:flex-initial text-xs font-semibold",
+                      })}
+                    >
+                      View Details &amp; Apply
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </main>
+
+      <CreateAccountModal
+        isOpen={showCreateAccountModal}
+        onClose={() => setShowCreateAccountModal(false)}
+        actionName="Unlock Full Access"
+      />
     </div>
   );
 }

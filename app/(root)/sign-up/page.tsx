@@ -2,6 +2,7 @@
 
 import { ROLE_CONFIGS } from "@/constants/roles";
 import { saveStoredAuthUser } from "@/lib/auth";
+import { useKasirizeStore } from "@/store/kasirize-store";
 import {
   ArrowRight,
   Briefcase,
@@ -46,13 +47,17 @@ function SignUpContent() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanId = cleanEmail.replace(/[^a-z0-9]/g, "_");
 
-    saveStoredAuthUser({
+    const authUser = {
       id: `usr_${role.replace("role-", "")}_${cleanId}`,
       name: displayName,
       email: cleanEmail,
       role,
+      isGuest: false,
       location,
-    });
+    };
+
+    saveStoredAuthUser(authUser);
+    useKasirizeStore.getState().setAuthUser(authUser);
 
     toast.success(`Account registered! Welcome to the ${ROLE_CONFIGS[role].name} portal.`);
     router.push(ROLE_CONFIGS[role].dashboardUrl);

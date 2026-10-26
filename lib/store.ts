@@ -46,69 +46,84 @@ export function getStoredRole(): UserRole {
 
 export function getStoredProfile(): YouthProfile {
   if (typeof window === "undefined") return DEFAULT_GUEST_PROFILE;
-  try {
-    const raw = localStorage.getItem(DEMO_DATA_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as YouthProfile;
-      // If user is logged in, prioritize their identity
-      const authUser = getStoredAuthUser();
-      if (authUser && !authUser.isGuest && parsed.email !== authUser.email && authUser.email) {
-        return {
-          ...parsed,
-          id: authUser.id,
-          fullName: authUser.name,
-          email: authUser.email,
-          location: authUser.location?.split(",")[0] || parsed.location,
-          province: authUser.location?.split(",")[1]?.trim() || parsed.province,
-        };
-      }
-      return parsed;
-    }
-  } catch (err) {
-    console.warn("Failed to parse stored profile, falling back to default:", err);
-  }
 
-  // If no manually saved draft, build directly from logged in user
+  // 1. If an authenticated user exists in auth session:
   const authUser = getStoredAuthUser();
   if (authUser) {
+    // If authenticated user is NOT a guest, their profile is live (not the guest draft in localStorage)
+    if (!authUser.isGuest) {
+      return {
+        id: authUser.id,
+        fullName: authUser.name,
+        email: authUser.email,
+        location: authUser.location?.split(",")[0] || "Soweto",
+        province: authUser.location?.split(",")[1]?.trim() || "Gauteng",
+        experienceStory:
+          "High reliability logistics and store assistant with verified completed township tasks.",
+        overallConfidenceScore: 91,
+        mockWalletCents: 45000,
+        completedTasksCount: 14,
+        savedOpportunities: ["opp_01"],
+        transportStipendEligible: true,
+        createdAt: new Date().toISOString(),
+        skills: [
+          {
+            id: "s-1",
+            skillId: "sk_delivery",
+            skillName: "Delivery Management",
+            status: "task_verified",
+            confidence: 93,
+            userApproved: true,
+            endorsedBy: "Sipho Nkosi",
+          },
+          {
+            id: "s-2",
+            skillId: "sk_stocktake",
+            skillName: "Stocktaking",
+            status: "task_verified",
+            confidence: 88,
+            userApproved: true,
+            endorsedBy: "Sipho Nkosi",
+          },
+        ],
+      };
+    }
+
+    // If authenticated user IS a guest, check if they saved their profile during onboarding
+    try {
+      const raw = localStorage.getItem(DEMO_DATA_STORAGE_KEY);
+      if (raw) {
+        return JSON.parse(raw) as YouthProfile;
+      }
+    } catch (err) {
+      console.warn("Failed to parse stored profile, falling back to default:", err);
+    }
+
     return {
       id: authUser.id,
       fullName: authUser.name,
       email: authUser.email,
       location: authUser.location?.split(",")[0] || "Soweto",
       province: authUser.location?.split(",")[1]?.trim() || "Gauteng",
-      experienceStory: authUser.isGuest
-        ? "Exploring verified township work and skills opportunities."
-        : "High reliability logistics and store assistant with verified completed township tasks.",
-      overallConfidenceScore: authUser.isGuest ? 65 : 91,
-      mockWalletCents: authUser.isGuest ? 0 : 45000,
-      completedTasksCount: authUser.isGuest ? 0 : 14,
-      savedOpportunities: ["opp_01"],
+      experienceStory: "Exploring verified township work and skills opportunities.",
+      overallConfidenceScore: 65,
+      mockWalletCents: 0,
+      completedTasksCount: 0,
+      savedOpportunities: [],
       transportStipendEligible: true,
       createdAt: new Date().toISOString(),
-      skills: authUser.isGuest
-        ? []
-        : [
-            {
-              id: "s-1",
-              skillId: "sk_delivery",
-              skillName: "Delivery Management",
-              status: "task_verified",
-              confidence: 93,
-              userApproved: true,
-              endorsedBy: "Sipho Nkosi",
-            },
-            {
-              id: "s-2",
-              skillId: "sk_stocktake",
-              skillName: "Stocktaking",
-              status: "task_verified",
-              confidence: 88,
-              userApproved: true,
-              endorsedBy: "Sipho Nkosi",
-            },
-          ],
+      skills: [],
     };
+  }
+
+  // 2. If no user logged in at all, check if a guest profile was built
+  try {
+    const raw = localStorage.getItem(DEMO_DATA_STORAGE_KEY);
+    if (raw) {
+      return JSON.parse(raw) as YouthProfile;
+    }
+  } catch (err) {
+    console.warn("Failed to parse stored profile:", err);
   }
 
   return DEFAULT_GUEST_PROFILE;

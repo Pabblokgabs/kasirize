@@ -2,6 +2,7 @@
 
 import { ROLE_CONFIGS, UserRole } from "@/constants/roles";
 import { DEMO_ACCOUNTS, saveStoredAuthUser } from "@/lib/auth";
+import { useKasirizeStore } from "@/store/kasirize-store";
 import {
   ArrowRight,
   Briefcase,
@@ -30,14 +31,17 @@ function SignInContent() {
   const [name, setName] = useState("");
 
   const handleInstantLogin = (acc: (typeof DEMO_ACCOUNTS)[number]) => {
-    saveStoredAuthUser({
+    const authUser = {
       id: `usr_${acc.role.replace("role-", "")}_${acc.email.split("@")[0].replace(/[^a-z0-9]/g, "_")}`,
       name: acc.name,
       email: acc.email,
       role: acc.role,
       isGuest: acc.isGuest ?? false,
       location: acc.description.split("•")[0]?.trim() || "Gauteng",
-    });
+    };
+
+    saveStoredAuthUser(authUser);
+    useKasirizeStore.getState().setAuthUser(authUser);
 
     toast.success(
       acc.isGuest
@@ -62,14 +66,16 @@ function SignInContent() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanId = cleanEmail.replace(/[^a-z0-9]/g, "_");
     const userName = name.trim() || email.split("@")[0];
-    saveStoredAuthUser({
+    const authUser = {
       id: `usr_custom_${cleanId}`,
       name: userName,
       email: cleanEmail,
       role,
       isGuest,
       location: "South Africa",
-    });
+    };
+    saveStoredAuthUser(authUser);
+    useKasirizeStore.getState().setAuthUser(authUser);
 
     toast.success(
       isGuest
