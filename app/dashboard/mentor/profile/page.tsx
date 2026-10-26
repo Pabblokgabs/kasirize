@@ -17,7 +17,6 @@ import { useLiveUserData } from "@/hooks/queries";
 import { getStoredAuthUser } from "@/lib/auth";
 import { useKasirizeStore } from "@/store/kasirize-store";
 import {
-  ArrowLeft,
   Check,
   CheckCircle2,
   Coins,
@@ -25,7 +24,6 @@ import {
   ExternalLink,
   LogOut,
   Percent,
-  Plus,
   ShieldAlert,
   ShieldCheck,
   Star,
@@ -222,26 +220,10 @@ export default function MentorProfilePage() {
         </div>
       )}
 
-      {/* ─── Back to Dashboard ─── */}
-      <div className="mb-5 flex items-center justify-between">
-        <Link
-          href="/dashboard/mentor"
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          <ArrowLeft className="size-4 mr-1.5" /> Back to Dashboard
-        </Link>
-        <Link
-          href="/dashboard/mentor/create-mentorship"
-          className={buttonVariants({ variant: "outline", size: "sm" })}
-        >
-          <Plus className="size-4 mr-1.5" /> Host Workshop
-        </Link>
-      </div>
-
       {/* ─── Profile Header with Avatar & Accreditation ─── */}
       <div className="bg-card rounded-card border border-border shadow-card p-6 mb-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex md:items-center gap-4">
             <div className="size-16 sm:size-20 rounded-2xl bg-brand-deep text-white flex items-center justify-center font-heading font-bold text-2xl shadow-lift shrink-0">
               {profile.fullName.charAt(0)}
             </div>
@@ -266,9 +248,9 @@ export default function MentorProfilePage() {
                   Master Mentor
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+              <p className="text-xs text-muted-foreground mt-1 flex flex-col md:flex-row md:items-center gap-2">
                 <span>{profile.roleTitle}</span>
-                <span>•</span>
+                <span className="hidden md:block">•</span>
                 <span>{profile.organization}</span>
               </p>
             </div>
