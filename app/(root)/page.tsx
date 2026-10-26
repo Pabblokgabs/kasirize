@@ -16,7 +16,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const router = useRouter();
@@ -31,9 +30,7 @@ export default function Home() {
 
   // Automatic role saving and onboarding routing
   const handleSelectRole = (role: UserRole) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(ROLE_STORAGE_KEY, role);
-    }
+    return router.push("/sign-in");
 
     if (role === "role-user") {
       toast.success("Welcome! Starting Youth profile builder.");
