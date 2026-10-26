@@ -56,7 +56,8 @@ const DEFAULT_MENTOR_PROFILE: MentorProfileData = {
   organization: "Soweto Artisan Guild",
   location: "Orlando East, Soweto",
   bio: "Over 18 years mentoring apprentice electricians across Gauteng townships. Passionate about practical DB boards, single-phase wiring, fault finding, and solar installations.",
-  specialties: "Single-phase wiring, DB boards, Solar PV installation, Safety compliance",
+  specialties:
+    "Single-phase wiring, DB boards, Solar PV installation, Safety compliance",
   hourlyRateRands: 200,
   accreditationBody: "Red Seal Artisan (Department of Higher Education & NAMB)",
   yearsExperience: 18,
@@ -97,20 +98,38 @@ export default function MentorProfilePage() {
     return DEFAULT_MENTOR_PROFILE;
   });
 
-  // Sync profile with currently logged in mentor / Neon live data
+  // Sync profile with currently logged-in mentor / Neon live data
   useEffect(() => {
-    if (liveData?.user || authUser) {
-      const u = liveData?.user || authUser;
-      setProfile((prev) => ({
+    const u = liveData?.user || authUser;
+
+    if (!u) return;
+
+    setProfile((prev) => {
+      const next = {
         ...prev,
-        fullName: u?.name || prev.fullName,
-        contactEmail: u?.email || prev.contactEmail,
-        location: u?.location || prev.location,
-        bio: u?.bio || prev.bio,
-      }));
-      if (liveData?.user?.isVerifiedBadge !== undefined) {
-        setIsVerified(Boolean(liveData.user.isVerifiedBadge));
+        fullName: u.name || prev.fullName,
+        contactEmail: u.email || prev.contactEmail,
+        location: u.location || prev.location,
+        bio: u.bio || prev.bio,
+      };
+
+      // Avoid triggering another render if values are unchanged.
+      if (
+        next.fullName === prev.fullName &&
+        next.contactEmail === prev.contactEmail &&
+        next.location === prev.location &&
+        next.bio === prev.bio
+      ) {
+        return prev;
       }
+
+      return next;
+    });
+
+    if (liveData?.user?.isVerifiedBadge !== undefined) {
+      const verified = Boolean(liveData.user.isVerifiedBadge);
+
+      setIsVerified((prev) => (prev === verified ? prev : verified));
     }
   }, [liveData, authUser]);
 
@@ -126,7 +145,9 @@ export default function MentorProfilePage() {
     return DEFAULT_BANKING;
   });
 
-  const [activeTab, setActiveTab] = useState<"credentials" | "rates" | "payouts">("credentials");
+  const [activeTab, setActiveTab] = useState<
+    "credentials" | "rates" | "payouts"
+  >("credentials");
   const [saved, setSaved] = useState(false);
   const [isVerified, setIsVerified] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -143,7 +164,11 @@ export default function MentorProfilePage() {
     if (typeof window !== "undefined") {
       localStorage.setItem(VERIFICATION_KEY, String(next));
     }
-    toast.success(next ? "Mentor credential verification active!" : "Mentor verification disabled.");
+    toast.success(
+      next
+        ? "Mentor credential verification active!"
+        : "Mentor verification disabled.",
+    );
     setShowVerifyModal(false);
   };
 
@@ -177,7 +202,8 @@ export default function MentorProfilePage() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Submit trade papers or Red Seal qualification to endorse credible youth CV skills and accept paid coaching bookings.
+                Submit trade papers or Red Seal qualification to endorse
+                credible youth CV skills and accept paid coaching bookings.
               </p>
             </div>
           </div>
@@ -255,24 +281,36 @@ export default function MentorProfilePage() {
         {/* Metric Highlights */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-border">
           <div className="p-3 bg-muted/40 rounded-btn text-center">
-            <p className="text-xl sm:text-2xl font-heading font-bold text-primary">4</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Active Mentees</p>
+            <p className="text-xl sm:text-2xl font-heading font-bold text-primary">
+              4
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Active Mentees
+            </p>
           </div>
           <div className="p-3 bg-muted/40 rounded-btn text-center">
-            <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">28</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Skills Endorsed</p>
+            <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">
+              28
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Skills Endorsed
+            </p>
           </div>
           <div className="p-3 bg-muted/40 rounded-btn text-center">
             <p className="text-xl sm:text-2xl font-heading font-bold text-emerald-600">
               {profile.yearsExperience} yrs
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Trade Experience</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Trade Experience
+            </p>
           </div>
           <div className="p-3 bg-muted/40 rounded-btn text-center">
             <p className="text-xl sm:text-2xl font-heading font-bold text-foreground">
               R {profile.hourlyRateRands}/hr
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Base Coaching Rate</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Base Coaching Rate
+            </p>
           </div>
         </div>
       </div>
@@ -293,7 +331,8 @@ export default function MentorProfilePage() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Free basic profile, featured listing upgrade (R149/mo), and 12% fee only on paid sessions.
+              Free basic profile, featured listing upgrade (R149/mo), and 12%
+              fee only on paid sessions.
             </p>
           </div>
         </div>
@@ -355,7 +394,8 @@ export default function MentorProfilePage() {
                 Artisan Profile &amp; Verification
               </h3>
               <p className="text-xs text-muted-foreground">
-                Your credentials give youth credible, employer-accepted skill verifications.
+                Your credentials give youth credible, employer-accepted skill
+                verifications.
               </p>
             </div>
             {saved && (
@@ -372,7 +412,9 @@ export default function MentorProfilePage() {
                 id="fullName"
                 required
                 value={profile.fullName}
-                onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, fullName: e.target.value })
+                }
               />
             </div>
             <div className="space-y-1.5">
@@ -381,7 +423,9 @@ export default function MentorProfilePage() {
                 id="roleTitle"
                 required
                 value={profile.roleTitle}
-                onChange={(e) => setProfile({ ...profile, roleTitle: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, roleTitle: e.target.value })
+                }
               />
             </div>
           </div>
@@ -393,15 +437,21 @@ export default function MentorProfilePage() {
                 id="org"
                 required
                 value={profile.organization}
-                onChange={(e) => setProfile({ ...profile, organization: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, organization: e.target.value })
+                }
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="accreditation">Accreditation / Trade Certificate</Label>
+              <Label htmlFor="accreditation">
+                Accreditation / Trade Certificate
+              </Label>
               <Input
                 id="accreditation"
                 value={profile.accreditationBody}
-                onChange={(e) => setProfile({ ...profile, accreditationBody: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, accreditationBody: e.target.value })
+                }
               />
             </div>
           </div>
@@ -413,7 +463,9 @@ export default function MentorProfilePage() {
                 id="location"
                 required
                 value={profile.location}
-                onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, location: e.target.value })
+                }
               />
             </div>
             <div className="space-y-1.5">
@@ -423,17 +475,26 @@ export default function MentorProfilePage() {
                 type="number"
                 min="1"
                 value={profile.yearsExperience}
-                onChange={(e) => setProfile({ ...profile, yearsExperience: Number(e.target.value) })}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    yearsExperience: Number(e.target.value),
+                  })
+                }
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="specialties">Specialties &amp; Skill Tracks (comma separated)</Label>
+            <Label htmlFor="specialties">
+              Specialties &amp; Skill Tracks (comma separated)
+            </Label>
             <Input
               id="specialties"
               value={profile.specialties}
-              onChange={(e) => setProfile({ ...profile, specialties: e.target.value })}
+              onChange={(e) =>
+                setProfile({ ...profile, specialties: e.target.value })
+              }
             />
           </div>
 
@@ -448,7 +509,9 @@ export default function MentorProfilePage() {
           </div>
 
           <div className="pt-3 flex items-center justify-between border-t border-border">
-            <span className="text-xs text-muted-foreground">Stored locally on this device</span>
+            <span className="text-xs text-muted-foreground">
+              Stored locally on this device
+            </span>
             <Button type="submit" className="font-semibold text-xs">
               Save Mentor Profile
             </Button>
@@ -468,7 +531,8 @@ export default function MentorProfilePage() {
                 Coaching Fees &amp; 12% Revenue Share
               </h3>
               <p className="text-xs text-muted-foreground">
-                Set transparent pricing for 1-on-1 practical coaching and workshop admissions.
+                Set transparent pricing for 1-on-1 practical coaching and
+                workshop admissions.
               </p>
             </div>
             <Percent className="size-5 text-emerald-600" />
@@ -477,10 +541,17 @@ export default function MentorProfilePage() {
           <div className="p-4 rounded-card bg-emerald-500/5 border border-emerald-500/20 space-y-2">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="size-4 text-emerald-600" />
-              <span className="font-semibold text-sm text-foreground">12% Transparent Platform Fee</span>
+              <span className="font-semibold text-sm text-foreground">
+                12% Transparent Platform Fee
+              </span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              When youth book a session at your rate of <strong>R{profile.hourlyRateRands}</strong>, you take home <strong>R{(profile.hourlyRateRands * 0.88).toFixed(0)}</strong> directly to your bank account. Kasirize retains 12% (R{(profile.hourlyRateRands * 0.12).toFixed(0)}) to fund escrow safety, apprentice insurance, and digital CV credentials.
+              When youth book a session at your rate of{" "}
+              <strong>R{profile.hourlyRateRands}</strong>, you take home{" "}
+              <strong>R{(profile.hourlyRateRands * 0.88).toFixed(0)}</strong>{" "}
+              directly to your bank account. Kasirize retains 12% (R
+              {(profile.hourlyRateRands * 0.12).toFixed(0)}) to fund escrow
+              safety, apprentice insurance, and digital CV credentials.
             </p>
           </div>
 
@@ -493,7 +564,12 @@ export default function MentorProfilePage() {
                 min="0"
                 step="25"
                 value={profile.hourlyRateRands}
-                onChange={(e) => setProfile({ ...profile, hourlyRateRands: Number(e.target.value) })}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    hourlyRateRands: Number(e.target.value),
+                  })
+                }
               />
             </div>
             <div className="space-y-1.5">
@@ -507,7 +583,9 @@ export default function MentorProfilePage() {
           </div>
 
           <div className="pt-3 flex items-center justify-between border-t border-border">
-            <span className="text-xs text-muted-foreground">Applies to all scheduled youth sessions</span>
+            <span className="text-xs text-muted-foreground">
+              Applies to all scheduled youth sessions
+            </span>
             <Button type="submit" className="font-semibold text-xs">
               Save Coaching Rates
             </Button>
@@ -539,11 +617,15 @@ export default function MentorProfilePage() {
               <select
                 id="bankName"
                 value={banking.bankName}
-                onChange={(e) => setBanking({ ...banking, bankName: e.target.value })}
+                onChange={(e) =>
+                  setBanking({ ...banking, bankName: e.target.value })
+                }
                 className="w-full bg-background border border-input rounded-btn px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="Standard Bank">Standard Bank</option>
-                <option value="First National Bank (FNB)">First National Bank (FNB)</option>
+                <option value="First National Bank (FNB)">
+                  First National Bank (FNB)
+                </option>
                 <option value="Capitec Bank">Capitec Bank</option>
                 <option value="Nedbank">Nedbank</option>
                 <option value="Absa Bank">Absa Bank</option>
@@ -556,7 +638,9 @@ export default function MentorProfilePage() {
                 id="branchCode"
                 required
                 value={banking.branchCode}
-                onChange={(e) => setBanking({ ...banking, branchCode: e.target.value })}
+                onChange={(e) =>
+                  setBanking({ ...banking, branchCode: e.target.value })
+                }
               />
             </div>
           </div>
@@ -567,12 +651,16 @@ export default function MentorProfilePage() {
               id="accNum"
               required
               value={banking.accountNumber}
-              onChange={(e) => setBanking({ ...banking, accountNumber: e.target.value })}
+              onChange={(e) =>
+                setBanking({ ...banking, accountNumber: e.target.value })
+              }
             />
           </div>
 
           <div className="pt-3 flex items-center justify-between border-t border-border">
-            <span className="text-xs text-muted-foreground">Settled within 2 hours of session completion</span>
+            <span className="text-xs text-muted-foreground">
+              Settled within 2 hours of session completion
+            </span>
             <Button type="submit" className="font-semibold text-xs">
               Save Settlement Details
             </Button>
@@ -591,25 +679,34 @@ export default function MentorProfilePage() {
               Skill Mentor Verification
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Verify your trade credentials or Red Seal papers so that youth receive employer-recognized skill endorsements.
+              Verify your trade credentials or Red Seal papers so that youth
+              receive employer-recognized skill endorsements.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="p-3 rounded-btn bg-muted/50 border border-border space-y-1">
-              <p className="font-semibold text-foreground">Verification Benefits:</p>
+              <p className="font-semibold text-foreground">
+                Verification Benefits:
+              </p>
               <ul className="space-y-1 text-muted-foreground">
                 <li className="flex items-center gap-1.5">
                   <Check className="size-3 text-emerald-600" />
-                  <span>Gold Red Seal badge on your mentor profile &amp; workshops</span>
+                  <span>
+                    Gold Red Seal badge on your mentor profile &amp; workshops
+                  </span>
                 </li>
                 <li className="flex items-center gap-1.5">
                   <Check className="size-3 text-emerald-600" />
-                  <span>Authorize employer-accepted platform CV endorsements</span>
+                  <span>
+                    Authorize employer-accepted platform CV endorsements
+                  </span>
                 </li>
                 <li className="flex items-center gap-1.5">
                   <Check className="size-3 text-emerald-600" />
-                  <span>Host paid 1-on-1 practical apprenticeship sessions</span>
+                  <span>
+                    Host paid 1-on-1 practical apprenticeship sessions
+                  </span>
                 </li>
               </ul>
             </div>

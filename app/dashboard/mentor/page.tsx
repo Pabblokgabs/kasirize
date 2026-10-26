@@ -1,5 +1,6 @@
 "use client";
 
+import SkeletonTemplate from "@/components/skeleton-template/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,45 +24,48 @@ export default function MentorDashboardPage() {
         if (res.ok) {
           const json = await res.json();
           if (json.youth && Array.isArray(json.youth) && isMounted) {
-            const adapted: YouthProfile[] = json.youth.map((y: {
-              id: string;
-              name: string;
-              email: string;
-              location: string;
-              confidenceScore?: number;
-              role?: string;
-            }) => ({
-              id: y.id,
-              fullName: y.name || "Kagiso Sithole",
-              email: y.email,
-              location: y.location || "Soweto",
-              province: "Gauteng",
-              experienceStory: "Youth candidate seeking workplace skill endorsements.",
-              overallConfidenceScore: y.confidenceScore || 85,
-              mockWalletCents: 45000,
-              completedTasksCount: 4,
-              savedOpportunities: [],
-              transportStipendEligible: true,
-              createdAt: new Date().toISOString(),
-              skills: [
-                {
-                  id: `sk_1_${y.id}`,
-                  skillId: "sk_customer_care",
-                  skillName: "Customer Service & Etiquette",
-                  status: "self_declared",
-                  confidence: 85,
-                  userApproved: true,
-                },
-                {
-                  id: `sk_2_${y.id}`,
-                  skillId: "sk_inventory",
-                  skillName: "Stock Management & Counting",
-                  status: "task_verified",
-                  confidence: 90,
-                  userApproved: true,
-                },
-              ],
-            }));
+            const adapted: YouthProfile[] = json.youth.map(
+              (y: {
+                id: string;
+                name: string;
+                email: string;
+                location: string;
+                confidenceScore?: number;
+                role?: string;
+              }) => ({
+                id: y.id,
+                fullName: y.name || "Kagiso Sithole",
+                email: y.email,
+                location: y.location || "Soweto",
+                province: "Gauteng",
+                experienceStory:
+                  "Youth candidate seeking workplace skill endorsements.",
+                overallConfidenceScore: y.confidenceScore || 85,
+                mockWalletCents: 45000,
+                completedTasksCount: 4,
+                savedOpportunities: [],
+                transportStipendEligible: true,
+                createdAt: new Date().toISOString(),
+                skills: [
+                  {
+                    id: `sk_1_${y.id}`,
+                    skillId: "sk_customer_care",
+                    skillName: "Customer Service & Etiquette",
+                    status: "self_declared",
+                    confidence: 85,
+                    userApproved: true,
+                  },
+                  {
+                    id: `sk_2_${y.id}`,
+                    skillId: "sk_inventory",
+                    skillName: "Stock Management & Counting",
+                    status: "task_verified",
+                    confidence: 90,
+                    userApproved: true,
+                  },
+                ],
+              }),
+            );
             setMentees(adapted);
           }
         }
@@ -118,14 +122,16 @@ export default function MentorDashboardPage() {
             </div>
           </div>
 
-          <Button
-            size="sm"
-            className="font-semibold text-xs flex items-center gap-1.5 shadow-xs"
-            onClick={() => setShowWorkshopModal(true)}
-          >
-            <Plus className="size-4" />
-            <span>Create Workshop</span>
-          </Button>
+          <div className="hidden md:block">
+            <Button
+              size="sm"
+              className="font-semibold text-xs flex items-center gap-1.5 shadow-xs"
+              onClick={() => setShowWorkshopModal(true)}
+            >
+              <Plus className="size-4" />
+              <span>Create Workshop</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -220,8 +226,34 @@ export default function MentorDashboardPage() {
           </div>
 
           {isLoading ? (
-            <div className="p-12 text-center text-xs text-muted-foreground">
-              Loading mentees from Neon database...
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-3 w-2/3" />
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-16 w-full" />
+              </div>
+
+              <div className="space-y-2">
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-3 w-2/3" />
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-16 w-full" />
+              </div>
+
+              <div className="space-y-2">
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-3 w-2/3" />
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-16 w-full" />
+              </div>
+
+              <div className="space-y-2">
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-3 w-2/3" />
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-16 w-full" />
+              </div>
             </div>
           ) : (
             <div className="space-y-3">

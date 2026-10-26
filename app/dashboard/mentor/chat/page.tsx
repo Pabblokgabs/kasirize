@@ -438,7 +438,7 @@ export default function MentorChatPage() {
             })}
           </div>
 
-          <div className="p-3 bg-muted/40 border-t border-border flex items-center gap-2 text-[11px] text-muted-foreground">
+          <div className="p-3 pb-7 bg-muted/40 border-t border-border flex items-center gap-2 text-[11px] text-muted-foreground">
             <Shield className="size-3.5 text-primary shrink-0" />
             <span className="line-clamp-1">
               Mentorship interactions are logged to verify skill confirmations.

@@ -1,7 +1,7 @@
 "use client";
 
 import Footer from "@/components/footer/page";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -15,15 +15,12 @@ import {
   RequesterPricingItem,
 } from "@/constants/pricing";
 import {
-  ArrowLeft,
   Check,
   CheckCircle2,
   Coins,
   HelpCircle,
-  Plus,
   ShieldCheck,
 } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -96,14 +93,6 @@ export default function RequesterPricingPage() {
       <header className="border-b border-border bg-card/90 backdrop-blur sticky top-0 z-30 px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/requester"
-              className={buttonVariants({ variant: "ghost", size: "sm" })}
-            >
-              <ArrowLeft className="size-4 mr-1" />
-              <span>Back</span>
-            </Link>
-            <div className="h-4 w-px bg-border hidden sm:block" />
             <div>
               <h1 className="font-heading font-bold text-base sm:text-lg text-foreground flex items-center gap-2">
                 <Coins className="size-5 text-primary" />
@@ -115,14 +104,6 @@ export default function RequesterPricingPage() {
               </p>
             </div>
           </div>
-
-          <Link
-            href="/dashboard/requester/post-task"
-            className={buttonVariants({ variant: "default", size: "sm" })}
-          >
-            <Plus className="size-4 mr-1" />
-            <span>Post a Task</span>
-          </Link>
         </div>
       </header>
 

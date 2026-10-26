@@ -12,13 +12,11 @@ import {
 } from "@/components/ui/dialog";
 import { MENTOR_PRICING_TABLE, MentorPricingItem } from "@/constants/pricing";
 import {
-  ArrowLeft,
   Award,
   Check,
   CheckCircle2,
   GraduationCap,
   Percent,
-  Plus,
   Sparkles,
   Star,
 } from "lucide-react";
@@ -99,14 +97,6 @@ export default function MentorPricingPage() {
       <header className="border-b border-border bg-card/90 backdrop-blur sticky top-0 z-30 px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard/mentor"
-              className={buttonVariants({ variant: "ghost", size: "sm" })}
-            >
-              <ArrowLeft className="size-4 mr-1" />
-              <span>Back</span>
-            </Link>
-            <div className="h-4 w-px bg-border hidden sm:block" />
             <div>
               <h1 className="font-heading font-bold text-base sm:text-lg text-foreground flex items-center gap-2">
                 <GraduationCap className="size-5 text-primary" />
@@ -118,14 +108,6 @@ export default function MentorPricingPage() {
               </p>
             </div>
           </div>
-
-          <Link
-            href="/dashboard/mentor/create-mentorship"
-            className={buttonVariants({ variant: "default", size: "sm" })}
-          >
-            <Plus className="size-4 mr-1" />
-            <span>Host Workshop</span>
-          </Link>
         </div>
       </header>
 
