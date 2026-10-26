@@ -336,13 +336,6 @@ export default function EmployerChatPage() {
           <div className="p-3 border-b border-border bg-card space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Link
-                  href="/dashboard/employer"
-                  className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground md:hidden"
-                  aria-label="Back to dashboard"
-                >
-                  <ArrowLeft className="size-5" />
-                </Link>
                 <h2 className="font-heading font-bold text-base text-foreground">
                   Candidates
                 </h2>
@@ -442,7 +435,7 @@ export default function EmployerChatPage() {
             })}
           </div>
 
-          <div className="p-3 bg-muted/40 border-t border-border flex items-center gap-2 text-[11px] text-muted-foreground">
+          <div className="p-3 pb-7 bg-muted/40 border-t border-border flex items-center gap-2 text-[11px] text-muted-foreground">
             <Shield className="size-3.5 text-primary shrink-0" />
             <span className="line-clamp-1">
               Kasirize prohibits upfront candidate fees or unauthorized

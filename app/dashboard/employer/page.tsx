@@ -1,5 +1,6 @@
 "use client";
 
+import SkeletonTemplate from "@/components/skeleton-template/page";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -403,7 +404,7 @@ export default function EmployerDashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <Button
               size="sm"
               onClick={() => setShowPostModal(true)}
@@ -476,20 +477,22 @@ export default function EmployerDashboardPage() {
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="font-heading font-bold text-base text-foreground flex items-center gap-2">
-                <span>Verified Candidate Pipeline</span>
+              <div className="flex items-center justify-baseline md:justify-normal gap-2">
+                <span className="font-heading font-bold text-base text-foreground">
+                  Verified Candidate Pipeline
+                </span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                   {filteredCandidates.length} Available
                 </span>
-              </h3>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Ranked by real township task completion &amp; referee
                 endorsement.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="relative w-48 sm:w-60">
+            <div className="flex flex-col md:flex-row md:items-center gap-2">
+              <div className="relative sm:w-60">
                 <Search className="size-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <Input
                   placeholder="Filter candidate or skill..."
@@ -499,7 +502,7 @@ export default function EmployerDashboardPage() {
                 />
               </div>
 
-              <div className="flex items-center bg-muted p-0.5 rounded-md text-xs">
+              {/* <div className="flex w-fit items-center bg-muted p-0.5 rounded-md text-xs">
                 <button
                   type="button"
                   onClick={() => setActiveTab("all")}
@@ -533,14 +536,40 @@ export default function EmployerDashboardPage() {
                 >
                   Funded ({fundedInterviewIds.length})
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
 
           {/* Candidate Cards Feed */}
           {isLoading ? (
-            <div className="p-12 text-center text-xs text-muted-foreground">
-              Loading candidates from Neon database...
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-3 w-2/3" />
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-16 w-full" />
+              </div>
+
+              <div className="space-y-2">
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-3 w-2/3" />
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-16 w-full" />
+              </div>
+
+              <div className="space-y-2">
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-3 w-2/3" />
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-16 w-full" />
+              </div>
+
+              <div className="space-y-2">
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-3 w-2/3" />
+                <SkeletonTemplate className="h-3 w-1/3" />
+                <SkeletonTemplate className="h-16 w-full" />
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -653,13 +682,15 @@ export default function EmployerDashboardPage() {
                 the live database.
               </p>
             </div>
-            <Link
-              href="/dashboard/employer/post-opportunity"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              <Plus className="size-3.5 mr-1" />
-              <span>New Listing</span>
-            </Link>
+            <div className="hidden md:block">
+              <Link
+                href="/dashboard/employer/post-opportunity"
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <Plus className="size-3.5 mr-1" />
+                <span>New Listing</span>
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">

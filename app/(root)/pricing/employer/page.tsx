@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   CreditCard,
   Crown,
-  Plus,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -99,9 +98,8 @@ export default function EmployerPricingPage() {
               className={buttonVariants({ variant: "ghost", size: "sm" })}
             >
               <ArrowLeft className="size-4 mr-1" />
-              <span>Back</span>
             </Link>
-            <div className="h-4 w-px bg-border hidden sm:block" />
+
             <div>
               <h1 className="font-heading font-bold text-base sm:text-lg text-foreground flex items-center gap-2">
                 <CreditCard className="size-5 text-primary" />
@@ -113,14 +111,6 @@ export default function EmployerPricingPage() {
               </p>
             </div>
           </div>
-
-          <Link
-            href="/dashboard/employer/post-opportunity"
-            className={buttonVariants({ variant: "default", size: "sm" })}
-          >
-            <Plus className="size-4 mr-1" />
-            <span>Post Opportunity</span>
-          </Link>
         </div>
       </header>
 

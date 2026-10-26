@@ -81,11 +81,17 @@ export default function EmployerProfilePage() {
   });
 
   // Sync profile with currently logged in user / Neon live data
+
+  // Sync profile with logged-in user / Neon live data.
+  // Only update state when a mapped value actually changes.
   useEffect(() => {
-    if (liveData?.user || authUser) {
-      const u = liveData?.user || authUser;
-      const empProf = liveData?.profile;
-      setProfile((prev) => ({
+    const u = liveData?.user || authUser;
+    const empProf = liveData?.profile;
+
+    if (!u && !empProf) return;
+
+    setProfile((prev) => {
+      const next: EmployerProfileData = {
         ...prev,
         companyName: empProf?.companyName || u?.name || prev.companyName,
         contactEmail: u?.email || prev.contactEmail,
@@ -96,10 +102,20 @@ export default function EmployerProfilePage() {
         industry: empProf?.industrySector || prev.industry,
         website: empProf?.website || prev.website,
         description: u?.bio || prev.description,
-      }));
-      if (liveData?.user?.isVerifiedBadge !== undefined) {
-        setIsVerified(Boolean(liveData.user.isVerifiedBadge));
-      }
+      };
+
+      // Preserve the existing object if nothing changed.
+      const unchanged = (
+        Object.keys(next) as (keyof EmployerProfileData)[]
+      ).every((key) => next[key] === prev[key]);
+
+      return unchanged ? prev : next;
+    });
+
+    if (liveData?.user?.isVerifiedBadge !== undefined) {
+      const verified = Boolean(liveData.user.isVerifiedBadge);
+
+      setIsVerified((prev) => (prev === verified ? prev : verified));
     }
   }, [liveData, authUser]);
 
@@ -205,7 +221,7 @@ export default function EmployerProfilePage() {
       {/* ─── Profile Header with Badge ─── */}
       <div className="bg-card rounded-card border border-border shadow-card p-6 mb-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex md:items-center gap-4">
             <div className="size-16 sm:size-20 rounded-2xl bg-brand-deep text-white flex items-center justify-center font-heading font-bold text-2xl shadow-lift shrink-0">
               {profile.companyName.charAt(0)}
             </div>
@@ -230,9 +246,9 @@ export default function EmployerProfilePage() {
                   {planName.split(" ")[0]}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+              <p className="text-xs text-muted-foreground mt-1 flex flex-col md:flex-row md:items-center gap-2">
                 <span>{profile.industry}</span>
-                <span>•</span>
+                <span className="hidden md:block">•</span>
                 <span>{profile.location}</span>
               </p>
             </div>

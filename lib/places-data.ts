@@ -71,16 +71,19 @@ export const EMPLOYER_1_PLACES: EmployerPlace[] = [
     name: "City Deep Distribution Hub & Staging Terminal",
     industry: "Logistics & Supply Chain",
     siteType: "Distribution Center",
-    tagline: "High-volume automated sorting, inventory audit, and fleet staging hub",
+    tagline:
+      "High-volume automated sorting, inventory audit, and fleet staging hub",
     address: "14 Heidelberg Road, City Deep",
     city: "Johannesburg",
     province: "Gauteng",
     interviewHubAddress: "Innovate Logistics Terminal 2, Gate 4, City Deep",
-    transitAccess: "Direct taxi rank & MetroRail commuter interchange adjacent to entrance",
+    transitAccess:
+      "Direct taxi rank & MetroRail commuter interchange adjacent to entrance",
     contactEmail: "themba@innovatelogistics.co.za",
     contactPhone: "071 234 5020",
     website: "https://innovatelogistics.co.za",
-    description: "Our premier 15,000 sqm distribution terminal serving Gauteng. We actively host youth warehouse pathways, inventory apprenticeships, and 100% pre-funded taxi transport for interviews.",
+    description:
+      "Our premier 15,000 sqm distribution terminal serving Gauteng. We actively host youth warehouse pathways, inventory apprenticeships, and 100% pre-funded taxi transport for interviews.",
     photos: [
       "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1000&q=80",
       "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=1000&q=80",
@@ -105,16 +108,19 @@ export const EMPLOYER_1_PLACES: EmployerPlace[] = [
     name: "Soweto Last-Mile Dispatch & Parcel Depot",
     industry: "Logistics & Supply Chain",
     siteType: "Regional Hub",
-    tagline: "Local parcel distribution hub connecting township shoppers and e-commerce couriers",
+    tagline:
+      "Local parcel distribution hub connecting township shoppers and e-commerce couriers",
     address: "12 Vilakazi Street, Orlando West",
     city: "Soweto",
     province: "Gauteng",
     interviewHubAddress: "Soweto Dispatch Point Office, Orlando West",
-    transitAccess: "5 minutes from Orlando Station and taxi ranks along Klipspruit Valley Road",
+    transitAccess:
+      "5 minutes from Orlando Station and taxi ranks along Klipspruit Valley Road",
     contactEmail: "soweto@innovatelogistics.co.za",
     contactPhone: "071 234 5020",
     website: "https://innovatelogistics.co.za",
-    description: "Our neighborhood last-mile dispatch depot where local couriers pick up parcels for fast Soweto home deliveries.",
+    description:
+      "Our neighborhood last-mile dispatch depot where local couriers pick up parcels for fast Soweto home deliveries.",
     photos: [
       "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1000&q=80",
       "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1000&q=80",
@@ -142,16 +148,19 @@ export const EMPLOYER_2_PLACES: EmployerPlace[] = [
     name: "FreshMart Regional Warehouse & Training Supermarket",
     industry: "Retail & FMCG",
     siteType: "Retail Store",
-    tagline: "W&RSETA accredited learning center and high-volume grocery supermarket",
+    tagline:
+      "W&RSETA accredited learning center and high-volume grocery supermarket",
     address: "88 Umgeni Road, Stamford Hill",
     city: "Durban",
     province: "KwaZulu-Natal",
-    interviewHubAddress: "FreshMart Human Capital Centre, 2nd Floor, Umgeni Road",
+    interviewHubAddress:
+      "FreshMart Human Capital Centre, 2nd Floor, Umgeni Road",
     transitAccess: "Adjacent to Berea station and central Durban taxi routes",
     contactEmail: "priya@freshmart.co.za",
     contactPhone: "071 234 5021",
     website: "https://freshmart.co.za",
-    description: "Regional distribution and supermarket flagship store training 50+ retail apprentices annually in stock management, till cashiering, and quality control.",
+    description:
+      "Regional distribution and supermarket flagship store training 50+ retail apprentices annually in stock management, till cashiering, and quality control.",
     photos: [
       "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=1000&q=80",
       "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1000&q=80",
@@ -200,7 +209,8 @@ export const REQUESTER_1_PLACES: RequesterPlace[] = [
     id: "place-1",
     name: "Sipho's Bree Street Wholesale & Spaza Depot",
     category: "Spaza Shop",
-    tagline: "High footfall wholesale distribution stall and convenience spaza shop",
+    tagline:
+      "High footfall wholesale distribution stall and convenience spaza shop",
     address: "74 Bree & Wanderers Street",
     ward: "Ward 60",
     township: "Johannesburg CBD",
@@ -210,10 +220,15 @@ export const REQUESTER_1_PLACES: RequesterPlace[] = [
     walkingDistanceWard: "Ward 60 & Ward 61",
     photos: [
       "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=1000&q=80",
-      "https://images.unsplash.com/photo-1556742049-0a67e557224d?auto=format&fit=crop&w=1000&q=80",
     ],
-    description: "Cornerstone grocery and wholesale distributor supplying neighborhood street traders. Youth micro-tasks focus on stock counting, parcel dispatch, and till assistance.",
-    facilities: ["Escrow Lock Payout", "Till Scanner Point", "Indoor Rest Area", "Cold Drink Frigidaire"],
+    description:
+      "Cornerstone grocery and wholesale distributor supplying neighborhood street traders. Youth micro-tasks focus on stock counting, parcel dispatch, and till assistance.",
+    facilities: [
+      "Escrow Lock Payout",
+      "Till Scanner Point",
+      "Indoor Rest Area",
+      "Cold Drink Frigidaire",
+    ],
     stats: {
       tasksOffered: 18,
       tasksCompleted: 16,
@@ -238,8 +253,13 @@ export const REQUESTER_1_PLACES: RequesterPlace[] = [
     photos: [
       "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80",
     ],
-    description: "Secondary neighborhood branch handling dry grocery distribution, bread crates, and weekly stock reconciliation.",
-    facilities: ["Security Grille Protection", "Digital Barcode Reader", "First Aid Kit"],
+    description:
+      "Secondary neighborhood branch handling dry grocery distribution, bread crates, and weekly stock reconciliation.",
+    facilities: [
+      "Security Grille Protection",
+      "Digital Barcode Reader",
+      "First Aid Kit",
+    ],
     stats: {
       tasksOffered: 8,
       tasksCompleted: 7,
@@ -269,8 +289,14 @@ export const REQUESTER_2_PLACES: RequesterPlace[] = [
       "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1000&q=80",
       "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1000&q=80",
     ],
-    description: "Community kitchen preparing hot meals, baking fresh bread, and packaging food parcels. Micro-tasks involve dough preparation, packaging, and weekend wedding event setups.",
-    facilities: ["Food Hygiene Certified", "Industrial Kitchen Sink", "Resting Area", "Escrow Secured Payouts"],
+    description:
+      "Community kitchen preparing hot meals, baking fresh bread, and packaging food parcels. Micro-tasks involve dough preparation, packaging, and weekend wedding event setups.",
+    facilities: [
+      "Food Hygiene Certified",
+      "Industrial Kitchen Sink",
+      "Resting Area",
+      "Escrow Secured Payouts",
+    ],
     stats: {
       tasksOffered: 12,
       tasksCompleted: 12,
@@ -301,4 +327,3 @@ export function getRequesterPlacesForUser(): RequesterPlace[] {
   }
   return REQUESTER_1_PLACES;
 }
-
